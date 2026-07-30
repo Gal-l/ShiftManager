@@ -1,0 +1,70 @@
+import { createClient } from '@supabase/supabase-js';
+import { Preference, Shift } from './scheduler';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey) 
+  : null;
+
+// Helper for local storage if Supabase is not configured yet
+const isLocal = !supabase;
+
+export async function savePreferences(preferences: Preference[], week: string) {
+  if (isLocal) {
+    const key = `pickoshifts_prefs_${week}`;
+    localStorage.setItem(key, JSON.stringify(preferences));
+    return;
+  }
+  
+  // Real Supabase implementation
+  // 1. Delete existing preferences for this week
+  await supabase!.from('preferences').delete().eq('week', week);
+  
+  // 2. Insert new preferences
+  const { error } = await supabase!.from('preferences').insert(
+    preferences.map(p => ({ ...p, week }))
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function loadPreferences(week: string): Promise<Preference[]> {
+  if (isLocal) {
+    const key = `pickoshifts_prefs_${week}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  }
+
+  const { data, error } = await supabase!.from('preferences').select('*').eq('week', week);
+  if (error) throw new Error(error.message);
+  return data as Preference[];
+}
+
+export async function saveSchedule(shifts: Shift[], week: string) {
+  if (isLocal) {
+    const key = `pickoshifts_schedule_${week}`;
+    localStorage.setItem(key, JSON.stringify(shifts));
+    return;
+  }
+
+  // Real Supabase implementation
+  await supabase!.from('shifts').delete().eq('week', week);
+  
+  const { error } = await supabase!.from('shifts').insert(
+    shifts.map(s => ({ ...s, week }))
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function loadSchedule(week: string): Promise<Shift[]> {
+  if (isLocal) {
+    const key = `pickoshifts_schedule_${week}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  }
+
+  const { data, error } = await supabase!.from('shifts').select('*').eq('week', week);
+  if (error) throw new Error(error.message);
+  return data as Shift[];
+}
