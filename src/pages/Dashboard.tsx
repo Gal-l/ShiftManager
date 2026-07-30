@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('next-week');
   const [weekId, setWeekId] = useState<string>(getNextWeekId());
-  
+
   const [lockedDays, setLockedDays] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
   const [userPrefs, setUserPrefs] = useState<Record<string, PreferenceStatus>>({});
@@ -42,13 +42,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!currentUser) return;
-    
+
     // Set week ID based on view mode
     let targetWeekId = weekId;
     if (viewMode === 'this-week') targetWeekId = getThisWeekId();
     else if (viewMode === 'next-week') targetWeekId = getNextWeekId();
     // if history, keep the current weekId which can be changed by arrows
-    
+
     setWeekId(targetWeekId);
     fetchData(targetWeekId);
   }, [viewMode, currentUser]);
@@ -60,7 +60,7 @@ export default function Dashboard() {
       const sched = await loadSchedule(targetWeek);
       setPreferences(prefs);
       setSchedule(sched);
-      
+
       // Initialize local user prefs state
       const myPrefs = prefs.filter(p => p.employee === currentUser);
       const initialPrefs: Record<string, PreferenceStatus> = {};
@@ -108,7 +108,7 @@ export default function Dashboard() {
   const handlePrefChange = (day: string, status: PreferenceStatus) => {
     const newStatus = userPrefs[day] === status ? 'neutral' : status;
     setUserPrefs(prev => ({ ...prev, [day]: newStatus }));
-    
+
     if (newStatus === 'prefer') {
       showToast("I love you optimistic way! 💖");
     } else if (newStatus === 'can not') {
@@ -122,9 +122,9 @@ export default function Dashboard() {
     setSavingPrefs(true);
     try {
       const myNewPrefs = DAYS.map(d => ({ employee: currentUser!, day: d, status: userPrefs[d] }));
-      
+
       await saveUserPreferences(myNewPrefs, weekId, currentUser!);
-      
+
       setPreferences(prev => {
         const otherPrefs = prev.filter(p => p.employee !== currentUser);
         return [...otherPrefs, ...myNewPrefs];
@@ -146,12 +146,12 @@ export default function Dashboard() {
       onConfirm: async () => {
         setModalState(prev => ({ ...prev, isOpen: false }));
         setSavingPrefs(true);
-        
+
         try {
           await saveUserPreferences([], weekId, currentUser!);
-          
+
           setPreferences(prev => prev.filter(p => p.employee !== currentUser));
-          
+
           const initialPrefs: Record<string, PreferenceStatus> = {};
           DAYS.forEach(d => initialPrefs[d] = 'neutral');
           setUserPrefs(initialPrefs);
@@ -166,17 +166,17 @@ export default function Dashboard() {
 
   const handleMakeShift = () => {
     const missingEmployees = EMPLOYEES.filter(emp => !preferences.some(p => p.employee === emp));
-    
+
     const doGenerate = async () => {
       setModalState(prev => ({ ...prev, isOpen: false }));
       setGenerating(true);
       try {
         // Small artificial delay for visual effect
         await new Promise(r => setTimeout(r, 600));
-        
+
         const lockedShifts = schedule.filter(s => lockedDays.includes(s.day));
         const newSchedule = generateSchedule(preferences, lockedShifts);
-        
+
         await saveSchedule(newSchedule, weekId);
         setSchedule(newSchedule);
       } catch (error) {
@@ -238,13 +238,13 @@ export default function Dashboard() {
             Manage your shifts for {viewMode === 'this-week' ? 'This Week' : viewMode === 'next-week' ? 'Next Week' : 'the week of'} ({weekId})
           </p>
         </div>
-        
+
         <div className="week-selector-container">
-          <button 
+          <button
             className={`tab-btn next-week-btn glass-panel ${viewMode === 'next-week' ? 'active' : ''}`}
             onClick={() => setViewMode('next-week')}
-            style={{ 
-              width: '100%', 
+            style={{
+              width: '100%',
               padding: '12px',
               textAlign: 'center',
               border: viewMode === 'next-week' ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
@@ -254,19 +254,19 @@ export default function Dashboard() {
             Next Week
           </button>
           <div className="week-selector glass-panel" style={{ padding: '4px', display: 'flex', justifyContent: 'center' }}>
-            <button 
+            <button
               className={`tab-btn ${viewMode === 'this-week' ? 'active' : ''}`}
               onClick={() => setViewMode('this-week')}
             >
               This Week
             </button>
-            <button 
+            <button
               className={`tab-btn ${viewMode === 'history' ? 'active' : ''}`}
               onClick={() => setViewMode('history')}
             >
               History
             </button>
-            <button 
+            <button
               className={`tab-btn ${viewMode === 'overall' ? 'active' : ''}`}
               onClick={() => setViewMode('overall')}
             >
@@ -285,9 +285,9 @@ export default function Dashboard() {
           )}
           <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>Viewing: {weekId}</span>
           {viewMode === 'history' && (
-            <button 
-              className="glass-button" 
-              onClick={() => setViewMode('this-week')} 
+            <button
+              className="glass-button"
+              onClick={() => setViewMode('this-week')}
               style={{ padding: '8px 12px', marginLeft: 'auto' }}
             >
               Return to This Week
@@ -315,10 +315,10 @@ export default function Dashboard() {
           {/* Calendar View */}
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 className="panel-title">
-              <CalendarIcon size={24} color="var(--accent-primary)" /> 
+              <CalendarIcon size={24} color="var(--accent-primary)" />
               Schedule
             </h3>
-            
+
             <div className="calendar">
               {DAYS.map(day => {
                 const dayShifts = schedule.filter(s => s.day === day);
@@ -335,7 +335,7 @@ export default function Dashboard() {
                         )}
                       </div>
                       {(viewMode === 'this-week' || viewMode === 'next-week') && (
-                        <button 
+                        <button
                           className="glass-button"
                           onClick={() => {
                             if (lockedDays.includes(day)) {
@@ -357,7 +357,7 @@ export default function Dashboard() {
                         const isPreferNot = preferences.find(p => p.employee === s.employee && p.day === s.day)?.status === 'prefer not';
                         return (
                           <div key={idx} className={`shift-chip ${isPreferred ? 'preferred' : ''} ${isPreferNot ? 'prefer-not-assigned' : ''}`}>
-                            {s.employee} {isPreferred && <span style={{fontSize:'0.8rem'}}>✨</span>}
+                            {s.employee} {isPreferred && <span style={{ fontSize: '0.8rem' }}>✨</span>}
                           </div>
                         );
                       })
@@ -371,18 +371,18 @@ export default function Dashboard() {
 
             {viewMode !== 'history' && (
               <div className="action-bar" style={{ gap: '12px' }}>
-                <button 
-                  className="glass-button" 
-                  onClick={handleClearSchedule} 
+                <button
+                  className="glass-button"
+                  onClick={handleClearSchedule}
                   disabled={generating}
                   style={{ color: '#ef4444', borderColor: '#ef4444' }}
                 >
                   <Trash2 size={20} />
                   Clear
                 </button>
-                <button 
-                  className="primary-button" 
-                  onClick={handleMakeShift} 
+                <button
+                  className="primary-button"
+                  onClick={handleMakeShift}
                   disabled={generating}
                 >
                   {generating ? <Loader2 className="lucide-spin" size={20} /> : <Wand2 size={20} />}
@@ -431,7 +431,7 @@ export default function Dashboard() {
           {viewMode !== 'overall' && viewMode !== 'history' && (
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h3 className="panel-title">Your Preferences</h3>
-              
+
               <div className="glass-panel" style={{ padding: '16px', marginBottom: '24px', background: 'rgba(0,0,0,0.15)' }}>
                 <h4 style={{ fontSize: '1rem', marginBottom: '12px', color: 'var(--text-primary)' }}>Legend</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
@@ -455,63 +455,63 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-            
-            <div className="prefs-list">
-              {DAYS.map(day => (
-                <div key={day} className="pref-item glass-panel" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontWeight: 500 }}>{day}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {getDateForDay(weekId, day)}
-                    </span>
-                  </div>
-                  <div className="pref-actions">
-                    <button 
-                      className={`pref-btn prefer ${userPrefs[day] === 'prefer' ? 'active' : ''}`}
-                      onClick={() => handlePrefChange(day, 'prefer')}
-                      title="Prefer this day"
-                    >
-                      <Check size={18} />
-                    </button>
-                    <button 
-                      className={`pref-btn not-prefer ${userPrefs[day] === 'prefer not' ? 'active' : ''}`}
-                      onClick={() => handlePrefChange(day, 'prefer not')}
-                      title="Prefer NOT this day"
-                    >
-                      <Minus size={18} />
-                    </button>
-                    <button 
-                      className={`pref-btn can-not ${userPrefs[day] === 'can not' ? 'active' : ''}`}
-                      onClick={() => handlePrefChange(day, 'can not')}
-                      title="CAN NOT work this day"
-                    >
-                      <Ban size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-              <button 
-                className="glass-button"
-                onClick={handleClearMyPreferences}
-                disabled={savingPrefs}
-                style={{ flex: 1, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-              >
-                Clear
-              </button>
-              <button 
-                className="glass-button save-prefs"
-                onClick={saveMyPreferences}
-                disabled={savingPrefs || !hasUnsavedChanges}
-                style={{ flex: 2, margin: 0, background: 'var(--accent-primary)', color: 'white', border: 'none', opacity: (!hasUnsavedChanges && !savingPrefs) ? 0.5 : 1 }}
-              >
-                {savingPrefs ? <Loader2 className="lucide-spin" size={18} /> : <Save size={18} />}
-                Save Preferences
-              </button>
+              <div className="prefs-list">
+                {DAYS.map(day => (
+                  <div key={day} className="pref-item glass-panel" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontWeight: 500 }}>{day}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {getDateForDay(weekId, day)}
+                      </span>
+                    </div>
+                    <div className="pref-actions">
+                      <button
+                        className={`pref-btn prefer ${userPrefs[day] === 'prefer' ? 'active' : ''}`}
+                        onClick={() => handlePrefChange(day, 'prefer')}
+                        title="Prefer this day"
+                      >
+                        <Check size={18} />
+                      </button>
+                      <button
+                        className={`pref-btn not-prefer ${userPrefs[day] === 'prefer not' ? 'active' : ''}`}
+                        onClick={() => handlePrefChange(day, 'prefer not')}
+                        title="Prefer NOT this day"
+                      >
+                        <Minus size={18} />
+                      </button>
+                      <button
+                        className={`pref-btn can-not ${userPrefs[day] === 'can not' ? 'active' : ''}`}
+                        onClick={() => handlePrefChange(day, 'can not')}
+                        title="CAN NOT work this day"
+                      >
+                        <Ban size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                <button
+                  className="glass-button"
+                  onClick={handleClearMyPreferences}
+                  disabled={savingPrefs}
+                  style={{ flex: 1, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                >
+                  Clear
+                </button>
+                <button
+                  className="glass-button save-prefs"
+                  onClick={saveMyPreferences}
+                  disabled={savingPrefs || !hasUnsavedChanges}
+                  style={{ flex: 2, margin: 0, background: 'var(--accent-primary)', color: 'white', border: 'none', opacity: (!hasUnsavedChanges && !savingPrefs) ? 0.5 : 1 }}
+                >
+                  {savingPrefs ? <Loader2 className="lucide-spin" size={18} /> : <Save size={18} />}
+                  Save Preferences
+                </button>
+              </div>
             </div>
-          </div>
           )}
         </div>
       )}
@@ -531,15 +531,15 @@ export default function Dashboard() {
             <p style={{ marginBottom: '24px', color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>{modalState.message}</p>
             <div className="modal-actions">
               {modalState.type === 'confirm' && (
-                <button 
-                  className="glass-button" 
+                <button
+                  className="glass-button"
                   onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}
                 >
                   Cancel
                 </button>
               )}
-              <button 
-                className="primary-button" 
+              <button
+                className="primary-button"
                 onClick={() => {
                   if (modalState.type === 'confirm' && modalState.onConfirm) {
                     modalState.onConfirm();
