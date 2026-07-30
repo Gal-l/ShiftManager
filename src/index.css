@@ -29,10 +29,14 @@
   padding: 0;
 }
 
+html {
+  background-color: var(--bg-color);
+  min-height: 100vh;
+}
+
 body {
   font-family: 'Outfit', sans-serif;
   background: var(--bg-gradient);
-  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -40,29 +44,35 @@ body {
   overflow-x: hidden;
 }
 
-body::before,
-body::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 200vw;
-  height: 200vh;
-  z-index: -1;
-  background-repeat: repeat;
-  background-size: 150px;
-  pointer-events: none;
-  animation: panBackground 60s linear infinite;
-}
+@media (min-width: 768px) {
+  body {
+    background-attachment: fixed;
+  }
+  
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200vw;
+    height: 200vh;
+    z-index: -1;
+    background-repeat: repeat;
+    background-size: 150px;
+    pointer-events: none;
+    animation: panBackground 60s linear infinite;
+  }
 
-body::before {
-  background-image: url('/logo.png');
-  opacity: 0.04;
-}
+  body::before {
+    background-image: url('/logo.png');
+    opacity: 0.04;
+  }
 
-body.admin-mode::after {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><g transform="translate(63, 63)"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" fill="none" stroke="%23eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g></svg>');
-  opacity: 0.2;
+  body.admin-mode::after {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><g transform="translate(63, 63)"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" fill="none" stroke="%23eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g></svg>');
+    opacity: 0.2;
+  }
 }
 
 @keyframes panBackground {
