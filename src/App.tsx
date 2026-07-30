@@ -8,9 +8,12 @@ function App() {
   return (
     <>
       <header className="app-header">
-        <a href="/" className="logo-container" onClick={(e) => { e.preventDefault(); navigate('/'); }}>
-          <img src="/logo.png" alt="PickoShifts Logo" className="logo-image" />
+        <a href="/" className="logo-container" onClick={(e) => { e.preventDefault(); navigate('/'); }} style={{ alignItems: 'baseline' }}>
+          <img src="/logo.png" alt="PickoShifts Logo" className="logo-image" style={{ alignSelf: 'center' }} />
           <h1 className="gradient-text">PickoShifts</h1>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '4px' }}>
+            {__APP_VERSION__}
+          </span>
         </a>
       </header>
       

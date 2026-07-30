@@ -329,7 +329,8 @@ export default function Dashboard() {
           <Loader2 className="lucide-spin" size={48} color="var(--accent-primary)" />
         </div>
       ) : (
-        {/* Mobile Subtabs */}
+        <>
+          {/* Mobile Subtabs */}
         {(viewMode === 'this-week' || viewMode === 'next-week') && (
           <div className="mobile-subtabs">
             <button 
@@ -566,6 +567,7 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* Toast Notification */}
