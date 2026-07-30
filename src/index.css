@@ -214,9 +214,10 @@ h1, h2, h3 {
 }
 
 .tab-btn.active {
-  background: var(--glass-bg);
-  border-color: var(--glass-border);
+  background: rgba(99, 102, 241, 0.2);
+  border-color: var(--accent-primary);
   color: var(--text-primary);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
 }
 
 /* Grid layout for Schedule and Preferences */
@@ -253,6 +254,12 @@ h1, h2, h3 {
   flex-direction: column;
   gap: 12px;
   min-height: 150px;
+}
+
+.day-card.passed-day {
+  background: rgba(0, 0, 0, 0.25) !important;
+  opacity: 0.6;
+  filter: grayscale(0.7);
 }
 
 .day-name {
@@ -410,4 +417,78 @@ h1, h2, h3 {
 
 .lucide-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Custom Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  max-width: 450px;
+  width: 90%;
+  padding: 32px;
+  background: linear-gradient(145deg, rgba(30, 27, 75, 0.8), rgba(15, 23, 42, 0.95));
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 16px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--accent-primary);
+  padding: 16px 24px;
+  border-radius: 100px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+  z-index: 1100;
+  animation: toastEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1), toastExit 0.4s 2.6s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toastEnter {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes toastExit {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, 20px); }
 }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, Check, Ban, Minus, Wand2, Loader2, Save, Trash2, Lock, Unlock } from 'lucide-react';
 import { DAYS, Preference, Shift, PreferenceStatus, generateSchedule } from '../lib/scheduler';
 import { loadPreferences, savePreferences, loadSchedule, saveSchedule } from '../lib/supabase';
-import { getThisWeekId, getNextWeekId, getPreviousWeekId } from '../lib/dateUtils';
+import { getThisWeekId, getNextWeekId, getPreviousWeekId, getPassedDaysInWeek, getDateForDay } from '../lib/dateUtils';
 import { EMPLOYEES } from '../lib/scheduler';
 
 type ViewMode = 'this-week' | 'next-week' | 'history' | 'overall';
@@ -20,6 +20,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'alert' | 'confirm';
+    onConfirm?: () => void;
+  }>({ isOpen: false, title: '', message: '', type: 'alert' });
 
   const navigate = useNavigate();
 
@@ -61,9 +69,15 @@ export default function Dashboard() {
         initialPrefs[d] = existing ? existing.status : 'neutral';
       });
       setUserPrefs(initialPrefs);
+
+      if (targetWeek === getThisWeekId()) {
+        setLockedDays(getPassedDaysInWeek());
+      } else {
+        setLockedDays([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
-      alert("Failed to load data.");
+      setModalState({ isOpen: true, title: 'Error', message: 'Failed to load data.', type: 'alert' });
     }
     setLoading(false);
   };
@@ -86,8 +100,22 @@ export default function Dashboard() {
     fetchData(nextWeek);
   };
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const handlePrefChange = (day: string, status: PreferenceStatus) => {
-    setUserPrefs(prev => ({ ...prev, [day]: prev[day] === status ? 'neutral' : status }));
+    const newStatus = userPrefs[day] === status ? 'neutral' : status;
+    setUserPrefs(prev => ({ ...prev, [day]: newStatus }));
+    
+    if (newStatus === 'prefer') {
+      showToast("I love you optimistic way! 💖");
+    } else if (newStatus === 'can not') {
+      showToast("I hope you have a good excuse! 🤨");
+    } else if (newStatus === 'prefer not') {
+      showToast("I have my own dreams as well 💭");
+    }
   };
 
   const saveMyPreferences = async () => {
@@ -103,66 +131,100 @@ export default function Dashboard() {
       // alert("Preferences saved!");
     } catch (error) {
       console.error("Error saving prefs:", error);
-      alert("Failed to save preferences.");
+      setModalState({ isOpen: true, title: 'Error', message: 'Failed to save preferences.', type: 'alert' });
     }
     setSavingPrefs(false);
   };
 
-  const handleClearMyPreferences = async () => {
-    if (!confirm("Are you sure you want to clear your preferences for this week?")) return;
-    setSavingPrefs(true);
-    
-    try {
-      const otherPrefs = preferences.filter(p => p.employee !== currentUser);
-      await savePreferences(otherPrefs, weekId);
-      setPreferences(otherPrefs);
-      
-      const initialPrefs: Record<string, PreferenceStatus> = {};
-      DAYS.forEach(d => initialPrefs[d] = 'neutral');
-      setUserPrefs(initialPrefs);
-    } catch (error) {
-      console.error("Error clearing prefs:", error);
-      alert("Failed to clear preferences.");
-    }
-    setSavingPrefs(false);
+  const handleClearMyPreferences = () => {
+    setModalState({
+      isOpen: true,
+      title: 'Clear Preferences',
+      message: 'Are you sure you want to clear your preferences for this week?',
+      type: 'confirm',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        setSavingPrefs(true);
+        
+        try {
+          const otherPrefs = preferences.filter(p => p.employee !== currentUser);
+          await savePreferences(otherPrefs, weekId);
+          setPreferences(otherPrefs);
+          
+          const initialPrefs: Record<string, PreferenceStatus> = {};
+          DAYS.forEach(d => initialPrefs[d] = 'neutral');
+          setUserPrefs(initialPrefs);
+        } catch (error) {
+          console.error("Error clearing prefs:", error);
+          setModalState({ isOpen: true, title: 'Error', message: 'Failed to clear preferences.', type: 'alert' });
+        }
+        setSavingPrefs(false);
+      }
+    });
   };
 
-  const handleMakeShift = async () => {
+  const handleMakeShift = () => {
     const missingEmployees = EMPLOYEES.filter(emp => !preferences.some(p => p.employee === emp));
+    
+    const doGenerate = async () => {
+      setModalState(prev => ({ ...prev, isOpen: false }));
+      setGenerating(true);
+      try {
+        // Small artificial delay for visual effect
+        await new Promise(r => setTimeout(r, 600));
+        
+        const lockedShifts = schedule.filter(s => lockedDays.includes(s.day));
+        const newSchedule = generateSchedule(preferences, lockedShifts);
+        
+        await saveSchedule(newSchedule, weekId);
+        setSchedule(newSchedule);
+      } catch (error) {
+        console.error("Error generating shift:", error);
+        setModalState({ isOpen: true, title: 'Error', message: 'An error occurred while generating shifts.', type: 'alert' });
+      }
+      setGenerating(false);
+    };
+
     if (missingEmployees.length > 0) {
-      const proceed = window.confirm(`Not all team members have set their preferences for this week.\nMissing: ${missingEmployees.join(', ')}\n\nAre you sure you want to generate the schedule?`);
-      if (!proceed) return;
+      setModalState({
+        isOpen: true,
+        title: 'Missing Preferences',
+        message: `Not all team members have set their preferences for this week.\nMissing: ${missingEmployees.join(', ')}\n\nAre you sure you want to generate the schedule?`,
+        type: 'confirm',
+        onConfirm: doGenerate
+      });
+    } else {
+      doGenerate();
     }
-
-    setGenerating(true);
-    try {
-      // Small artificial delay for visual effect
-      await new Promise(r => setTimeout(r, 600));
-      
-      const lockedShifts = schedule.filter(s => lockedDays.includes(s.day));
-      const newSchedule = generateSchedule(preferences, lockedShifts);
-      
-      await saveSchedule(newSchedule, weekId);
-      setSchedule(newSchedule);
-    } catch (error) {
-      console.error("Error generating shift:", error);
-      alert("An error occurred while generating shifts.");
-    }
-    setGenerating(false);
   };
 
-  const handleClearSchedule = async () => {
-    if (!confirm("Are you sure you want to clear the schedule for this week?")) return;
-    setGenerating(true);
-    try {
-      await saveSchedule([], weekId);
-      setSchedule([]);
-    } catch (error) {
-      console.error("Error clearing shift:", error);
-      alert("Failed to clear schedule.");
-    }
-    setGenerating(false);
+  const handleClearSchedule = () => {
+    setModalState({
+      isOpen: true,
+      title: 'Clear Schedule',
+      message: 'Are you sure you want to clear the schedule for this week? (Locked days will be preserved)',
+      type: 'confirm',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        setGenerating(true);
+        try {
+          const lockedShifts = schedule.filter(s => lockedDays.includes(s.day));
+          await saveSchedule(lockedShifts, weekId);
+          setSchedule(lockedShifts);
+        } catch (error) {
+          console.error("Error clearing shift:", error);
+          setModalState({ isOpen: true, title: 'Error', message: 'Failed to clear schedule.', type: 'alert' });
+        }
+        setGenerating(false);
+      }
+    });
   };
+
+  const mySavedPrefs = preferences.filter(p => p.employee === currentUser);
+  const hasUnsavedChanges = DAYS.some(day => {
+    const savedStatus = mySavedPrefs.find(p => p.day === day)?.status || 'neutral';
+    return userPrefs[day] !== savedStatus;
+  });
 
   if (!currentUser) return null;
 
@@ -171,7 +233,9 @@ export default function Dashboard() {
       <div className="dashboard-header">
         <div>
           <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Hello, {currentUser}!</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Manage your shifts for the week of {weekId}</p>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            Manage your shifts for {viewMode === 'this-week' ? 'This Week' : viewMode === 'next-week' ? 'Next Week' : 'the week of'} ({weekId})
+          </p>
         </div>
         
         <div className="week-selector glass-panel" style={{ padding: '4px' }}>
@@ -248,10 +312,18 @@ export default function Dashboard() {
             <div className="calendar">
               {DAYS.map(day => {
                 const dayShifts = schedule.filter(s => s.day === day);
+                const isPassedDay = weekId === getThisWeekId() && getPassedDaysInWeek().includes(day) && lockedDays.includes(day);
                 return (
-                  <div key={day} className="day-card glass-panel" style={{ background: 'rgba(0,0,0,0.1)' }}>
+                  <div key={day} className={`day-card glass-panel ${isPassedDay ? 'passed-day' : ''}`} style={{ background: 'rgba(0,0,0,0.1)' }}>
                     <div className="day-name" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      {day}
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{day}</span>
+                        {(viewMode === 'this-week' || viewMode === 'next-week') && (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'normal', marginTop: '2px' }}>
+                            {getDateForDay(weekId, day)}
+                          </span>
+                        )}
+                      </div>
                       {(viewMode === 'this-week' || viewMode === 'next-week') && (
                         <button 
                           className="glass-button"
@@ -377,7 +449,12 @@ export default function Dashboard() {
             <div className="prefs-list">
               {DAYS.map(day => (
                 <div key={day} className="pref-item glass-panel" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px 16px' }}>
-                  <span style={{ fontWeight: 500 }}>{day}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 500 }}>{day}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {getDateForDay(weekId, day)}
+                    </span>
+                  </div>
                   <div className="pref-actions">
                     <button 
                       className={`pref-btn prefer ${userPrefs[day] === 'prefer' ? 'active' : ''}`}
@@ -417,8 +494,8 @@ export default function Dashboard() {
               <button 
                 className="glass-button save-prefs"
                 onClick={saveMyPreferences}
-                disabled={savingPrefs}
-                style={{ flex: 2, margin: 0, background: 'var(--accent-primary)', color: 'white', border: 'none' }}
+                disabled={savingPrefs || !hasUnsavedChanges}
+                style={{ flex: 2, margin: 0, background: 'var(--accent-primary)', color: 'white', border: 'none', opacity: (!hasUnsavedChanges && !savingPrefs) ? 0.5 : 1 }}
               >
                 {savingPrefs ? <Loader2 className="lucide-spin" size={18} /> : <Save size={18} />}
                 Save Preferences
@@ -426,6 +503,45 @@ export default function Dashboard() {
             </div>
           </div>
           )}
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="toast-notification">
+          {toastMessage}
+        </div>
+      )}
+
+      {/* Modal */}
+      {modalState.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-container glass-panel">
+            <h3 style={{ marginBottom: '16px', fontSize: '1.25rem' }}>{modalState.title}</h3>
+            <p style={{ marginBottom: '24px', color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>{modalState.message}</p>
+            <div className="modal-actions">
+              {modalState.type === 'confirm' && (
+                <button 
+                  className="glass-button" 
+                  onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))}
+                >
+                  Cancel
+                </button>
+              )}
+              <button 
+                className="primary-button" 
+                onClick={() => {
+                  if (modalState.type === 'confirm' && modalState.onConfirm) {
+                    modalState.onConfirm();
+                  } else {
+                    setModalState(prev => ({ ...prev, isOpen: false }));
+                  }
+                }}
+              >
+                {modalState.type === 'confirm' ? 'Confirm' : 'OK'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

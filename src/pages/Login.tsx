@@ -63,7 +63,7 @@ export default function Login() {
               transition: 'all 0.2s'
             }}
           />
-          {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '6px', textAlign: 'left' }}>Incorrect password</p>}
+          {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '6px', textAlign: 'left' }}>Incorrect password. Hint: Operator</p>}
         </div>
 
         <button
