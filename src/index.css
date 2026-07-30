@@ -1,4 +1,4 @@
-i@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
   --bg-color: #0f172a;
@@ -257,6 +257,17 @@ h3 {
   border-color: var(--accent-primary);
   color: var(--text-primary);
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.next-week-btn {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.next-week-btn:not(.active) {
+  color: #c7d2fe;
 }
 
 /* Grid layout for Schedule and Preferences */

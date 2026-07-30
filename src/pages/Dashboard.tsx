@@ -10,8 +10,8 @@ type ViewMode = 'this-week' | 'next-week' | 'history' | 'overall';
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('this-week');
-  const [weekId, setWeekId] = useState<string>(getThisWeekId());
+  const [viewMode, setViewMode] = useState<ViewMode>('next-week');
+  const [weekId, setWeekId] = useState<string>(getNextWeekId());
   
   const [lockedDays, setLockedDays] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
@@ -247,7 +247,7 @@ export default function Dashboard() {
             This Week
           </button>
           <button 
-            className={`tab-btn ${viewMode === 'next-week' ? 'active' : ''}`}
+            className={`tab-btn next-week-btn ${viewMode === 'next-week' ? 'active' : ''}`}
             onClick={() => setViewMode('next-week')}
           >
             Next Week
