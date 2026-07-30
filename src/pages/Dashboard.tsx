@@ -399,8 +399,9 @@ export default function Dashboard() {
                       dayShifts.map((s, idx) => {
                         const isPreferred = preferences.find(p => p.employee === s.employee && p.day === s.day)?.status === 'prefer';
                         const isPreferNot = preferences.find(p => p.employee === s.employee && p.day === s.day)?.status === 'prefer not';
+                        const isCannot = preferences.find(p => p.employee === s.employee && p.day === s.day)?.status === 'can not';
                         return (
-                          <div key={idx} className={`shift-chip ${isPreferred ? 'preferred' : ''} ${isPreferNot ? 'prefer-not-assigned' : ''}`}>
+                          <div key={idx} className={`shift-chip ${isPreferred ? 'preferred' : ''} ${isPreferNot ? 'prefer-not-assigned' : ''} ${isCannot ? 'can-not-assigned' : ''}`}>
                             {s.employee} {isPreferred && <span style={{ fontSize: '0.8rem' }}>✨</span>}
                           </div>
                         );

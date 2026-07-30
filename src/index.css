@@ -472,6 +472,13 @@ h3 {
   box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);
 }
 
+.shift-chip.can-not-assigned {
+  background: rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fecaca;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
 /* Preferences List */
 .prefs-list {
   display: flex;
