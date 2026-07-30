@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EMPLOYEES } from '../lib/scheduler';
 import { LogIn, Unlock, Crown } from 'lucide-react';
@@ -11,12 +11,22 @@ export default function Login() {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.body.classList.remove('admin-mode');
+    document.title = 'PickoShift';
+  }, []);
+
   const handleUnlock = () => {
-    if (password === '2727' || password === '7272') {
+    if (password === '2727' || password === '727272') {
       setIsUnlocked(true);
       setError(false);
-      setIsAdmin(password === '7272');
-      localStorage.setItem('pickoshifts_user_type', password === '7272' ? 'Admin' : 'User');
+      const admin = password === '727272';
+      setIsAdmin(admin);
+      localStorage.setItem('pickoshifts_user_type', admin ? 'Admin' : 'User');
+      if (admin) {
+        document.body.classList.add('admin-mode');
+        document.title = '👑 PickoShift';
+      }
     } else {
       setError(true);
     }
@@ -84,7 +94,7 @@ export default function Login() {
             </p>
 
             <div className="employee-grid">
-              {EMPLOYEES.map((emp) => (
+              {(isAdmin ? ['Gal'] : EMPLOYEES).map((emp) => (
                 <button
                   key={emp}
                   className={`glass-button employee-btn ${selectedUser === emp ? 'active' : ''}`}

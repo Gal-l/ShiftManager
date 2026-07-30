@@ -44,6 +44,20 @@ export default function Dashboard() {
   }, [navigate]);
 
   useEffect(() => {
+    if (userType === 'Admin') {
+      document.title = '👑 PickoShift';
+      document.body.classList.add('admin-mode');
+    } else {
+      document.title = 'PickoShift';
+      document.body.classList.remove('admin-mode');
+    }
+    return () => {
+      document.title = 'PickoShift';
+      document.body.classList.remove('admin-mode');
+    };
+  }, [userType]);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     // Set week ID based on view mode
@@ -441,7 +455,14 @@ export default function Dashboard() {
           {/* User Preferences (Hidden in overall and history view) */}
           {viewMode !== 'overall' && viewMode !== 'history' && (
             <div className="glass-panel panel-padding">
-              <h3 className="panel-title">Your Preferences</h3>
+              <h3 className="panel-title">
+                Your Preferences
+                {hasUnsavedChanges && (
+                  <span style={{ fontSize: '1rem', color: 'var(--status-prefer-not-border)', fontWeight: 'normal' }}>
+                    - don't forget to save
+                  </span>
+                )}
+              </h3>
 
               <div className="glass-panel panel-padding" style={{ marginBottom: '24px', background: 'rgba(0,0,0,0.15)' }}>
                 <h4 style={{ fontSize: '1rem', marginBottom: '12px', color: 'var(--text-primary)' }}>Legend</h4>
