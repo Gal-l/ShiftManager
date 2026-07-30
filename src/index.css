@@ -222,6 +222,20 @@ h3 {
   }
 }
 
+.week-selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .week-selector-container {
+    width: auto;
+    align-items: flex-end;
+  }
+}
+
 .week-selector {
   display: flex;
   flex-wrap: wrap;

@@ -239,31 +239,40 @@ export default function Dashboard() {
           </p>
         </div>
         
-        <div className="week-selector glass-panel" style={{ padding: '4px' }}>
+        <div className="week-selector-container">
           <button 
-            className={`tab-btn ${viewMode === 'this-week' ? 'active' : ''}`}
-            onClick={() => setViewMode('this-week')}
-          >
-            This Week
-          </button>
-          <button 
-            className={`tab-btn next-week-btn ${viewMode === 'next-week' ? 'active' : ''}`}
+            className={`tab-btn next-week-btn glass-panel ${viewMode === 'next-week' ? 'active' : ''}`}
             onClick={() => setViewMode('next-week')}
+            style={{ 
+              width: '100%', 
+              padding: '12px',
+              textAlign: 'center',
+              border: viewMode === 'next-week' ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+              background: viewMode === 'next-week' ? 'rgba(99, 102, 241, 0.2)' : 'var(--glass-bg)'
+            }}
           >
             Next Week
           </button>
-          <button 
-            className={`tab-btn ${viewMode === 'history' ? 'active' : ''}`}
-            onClick={() => setViewMode('history')}
-          >
-            History
-          </button>
-          <button 
-            className={`tab-btn ${viewMode === 'overall' ? 'active' : ''}`}
-            onClick={() => setViewMode('overall')}
-          >
-            Overall
-          </button>
+          <div className="week-selector glass-panel" style={{ padding: '4px', display: 'flex', justifyContent: 'center' }}>
+            <button 
+              className={`tab-btn ${viewMode === 'this-week' ? 'active' : ''}`}
+              onClick={() => setViewMode('this-week')}
+            >
+              This Week
+            </button>
+            <button 
+              className={`tab-btn ${viewMode === 'history' ? 'active' : ''}`}
+              onClick={() => setViewMode('history')}
+            >
+              History
+            </button>
+            <button 
+              className={`tab-btn ${viewMode === 'overall' ? 'active' : ''}`}
+              onClick={() => setViewMode('overall')}
+            >
+              Overall
+            </button>
+          </div>
         </div>
       </div>
 
