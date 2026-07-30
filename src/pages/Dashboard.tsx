@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, Check, Ban, Minus, Wand2, Loader2, Save, Trash2, Lock, Unlock } from 'lucide-react';
 import { DAYS, Preference, Shift, PreferenceStatus, generateSchedule } from '../lib/scheduler';
-import { loadPreferences, savePreferences, loadSchedule, saveSchedule } from '../lib/supabase';
+import { loadPreferences, saveUserPreferences, loadSchedule, saveSchedule } from '../lib/supabase';
 import { getThisWeekId, getNextWeekId, getPreviousWeekId, getPassedDaysInWeek, getDateForDay } from '../lib/dateUtils';
 import { EMPLOYEES } from '../lib/scheduler';
 
@@ -121,13 +121,14 @@ export default function Dashboard() {
   const saveMyPreferences = async () => {
     setSavingPrefs(true);
     try {
-      // Create a new preference array, removing old ones for this user and adding new ones
-      const otherPrefs = preferences.filter(p => p.employee !== currentUser);
       const myNewPrefs = DAYS.map(d => ({ employee: currentUser!, day: d, status: userPrefs[d] }));
-      const updatedPrefs = [...otherPrefs, ...myNewPrefs];
       
-      await savePreferences(updatedPrefs, weekId);
-      setPreferences(updatedPrefs);
+      await saveUserPreferences(myNewPrefs, weekId, currentUser!);
+      
+      setPreferences(prev => {
+        const otherPrefs = prev.filter(p => p.employee !== currentUser);
+        return [...otherPrefs, ...myNewPrefs];
+      });
       // alert("Preferences saved!");
     } catch (error) {
       console.error("Error saving prefs:", error);
@@ -147,9 +148,9 @@ export default function Dashboard() {
         setSavingPrefs(true);
         
         try {
-          const otherPrefs = preferences.filter(p => p.employee !== currentUser);
-          await savePreferences(otherPrefs, weekId);
-          setPreferences(otherPrefs);
+          await saveUserPreferences([], weekId, currentUser!);
+          
+          setPreferences(prev => prev.filter(p => p.employee !== currentUser));
           
           const initialPrefs: Record<string, PreferenceStatus> = {};
           DAYS.forEach(d => initialPrefs[d] = 'neutral');
