@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EMPLOYEES } from '../lib/scheduler';
-import { LogIn, Unlock } from 'lucide-react';
+import { LogIn, Unlock, Crown } from 'lucide-react';
 
 export default function Login() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [error, setError] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   const handleUnlock = () => {
     if (password === '2727' || password === '7272') {
       setIsUnlocked(true);
       setError(false);
+      setIsAdmin(password === '7272');
       localStorage.setItem('pickoshifts_user_type', password === '7272' ? 'Admin' : 'User');
     } else {
       setError(true);
@@ -89,6 +91,9 @@ export default function Login() {
                   onClick={() => setSelectedUser(emp)}
                 >
                   {emp}
+                  {isAdmin && selectedUser === emp && (
+                    <Crown size={18} color="#fbbf24" fill="#fbbf24" style={{ marginLeft: '8px' }} />
+                  )}
                 </button>
               ))}
             </div>

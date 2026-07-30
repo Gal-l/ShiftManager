@@ -236,8 +236,8 @@ export default function Dashboard() {
     <div>
       <div className="dashboard-header">
         <div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Hello, {currentUser}! <span style={{ fontSize: '1rem', color: 'var(--accent-primary)', fontWeight: 'normal', marginLeft: '8px' }}>({userType})</span></h2>
-          <p style={{ color: 'var(--text-secondary)' }}>
+          <h2 className="page-title">Hello, {currentUser}! <span className="page-title-badge">({userType})</span></h2>
+          <p className="page-subtitle">
             Manage your shifts for {viewMode === 'this-week' ? 'This Week' : viewMode === 'next-week' ? 'Next Week' : 'the week of'} ({weekId})
           </p>
         </div>
@@ -280,18 +280,18 @@ export default function Dashboard() {
       </div>
 
       {(viewMode === 'history' || viewMode === 'overall') && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div className="history-toolbar">
           {viewMode === 'history' && (
             <button className="glass-button" onClick={handlePrevHistory} style={{ padding: '8px 12px' }}>
               <ChevronLeft size={16} /> Previous
             </button>
           )}
-          <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>Viewing: {weekId}</span>
+          <span style={{ fontWeight: 500, color: 'var(--text-secondary)', textAlign: 'center' }}>Viewing: {weekId}</span>
           {viewMode === 'history' && (
             <button
               className="glass-button"
               onClick={() => setViewMode('this-week')}
-              style={{ padding: '8px 12px', marginLeft: 'auto' }}
+              style={{ padding: '8px 12px' }}
             >
               Return to This Week
             </button>
@@ -316,7 +316,7 @@ export default function Dashboard() {
       ) : (
         <div className="dashboard-grid">
           {/* Calendar View */}
-          <div className="glass-panel" style={{ padding: '24px' }}>
+          <div className="glass-panel panel-padding">
             <h3 className="panel-title">
               <CalendarIcon size={24} color="var(--accent-primary)" />
               Schedule
@@ -338,20 +338,28 @@ export default function Dashboard() {
                         )}
                       </div>
                       {(viewMode === 'this-week' || viewMode === 'next-week') && (
-                        <button
-                          className="glass-button"
-                          onClick={() => {
-                            if (lockedDays.includes(day)) {
-                              setLockedDays(lockedDays.filter(d => d !== day));
-                            } else {
-                              setLockedDays([...lockedDays, day]);
-                            }
-                          }}
-                          style={{ padding: '4px 8px', background: 'transparent', border: 'none', color: lockedDays.includes(day) ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
-                          title={lockedDays.includes(day) ? "Unlock this day" : "Lock this day"}
-                        >
-                          {lockedDays.includes(day) ? <Lock size={14} /> : <Unlock size={14} />}
-                        </button>
+                        userType === 'Admin' ? (
+                          <button
+                            className="glass-button"
+                            onClick={() => {
+                              if (lockedDays.includes(day)) {
+                                setLockedDays(lockedDays.filter(d => d !== day));
+                              } else {
+                                setLockedDays([...lockedDays, day]);
+                              }
+                            }}
+                            style={{ padding: '4px 8px', background: 'transparent', border: 'none', color: lockedDays.includes(day) ? 'var(--accent-primary)' : 'var(--text-secondary)' }}
+                            title={lockedDays.includes(day) ? "Unlock this day" : "Lock this day"}
+                          >
+                            {lockedDays.includes(day) ? <Lock size={14} /> : <Unlock size={14} />}
+                          </button>
+                        ) : (
+                          lockedDays.includes(day) ? (
+                            <span style={{ padding: '4px 8px', color: 'var(--accent-primary)' }} title="Locked">
+                              <Lock size={14} />
+                            </span>
+                          ) : null
+                        )
                       )}
                     </div>
                     {dayShifts.length > 0 ? (
@@ -373,7 +381,7 @@ export default function Dashboard() {
             </div>
 
             {viewMode !== 'history' && userType === 'Admin' && (
-              <div className="action-bar" style={{ gap: '12px' }}>
+              <div className="action-bar">
                 <button
                   className="glass-button"
                   onClick={handleClearSchedule}
@@ -397,7 +405,7 @@ export default function Dashboard() {
 
           {/* Overall Preferences View */}
           {viewMode === 'overall' && (
-            <div className="glass-panel" style={{ padding: '24px', gridColumn: '1 / -1' }}>
+            <div className="glass-panel panel-padding" style={{ gridColumn: '1 / -1' }}>
               <h3 className="panel-title">Overall Employee Preferences</h3>
               <div style={{ overflowX: 'auto' }}>
                 <table className="overall-table">
@@ -432,10 +440,10 @@ export default function Dashboard() {
 
           {/* User Preferences (Hidden in overall and history view) */}
           {viewMode !== 'overall' && viewMode !== 'history' && (
-            <div className="glass-panel" style={{ padding: '24px' }}>
+            <div className="glass-panel panel-padding">
               <h3 className="panel-title">Your Preferences</h3>
 
-              <div className="glass-panel" style={{ padding: '16px', marginBottom: '24px', background: 'rgba(0,0,0,0.15)' }}>
+              <div className="glass-panel panel-padding" style={{ marginBottom: '24px', background: 'rgba(0,0,0,0.15)' }}>
                 <h4 style={{ fontSize: '1rem', marginBottom: '12px', color: 'var(--text-primary)' }}>Legend</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -461,7 +469,7 @@ export default function Dashboard() {
 
               <div className="prefs-list">
                 {DAYS.map(day => (
-                  <div key={day} className="pref-item glass-panel" style={{ background: 'rgba(0,0,0,0.1)', padding: '12px 16px' }}>
+                  <div key={day} className="pref-item glass-panel" style={{ background: 'rgba(0,0,0,0.1)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontWeight: 500 }}>{day}</span>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -495,12 +503,12 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <div className="action-bar" style={{ marginTop: '24px' }}>
                 <button
                   className="glass-button"
                   onClick={handleClearMyPreferences}
                   disabled={savingPrefs}
-                  style={{ flex: 1, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                  style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
                 >
                   Clear
                 </button>
@@ -508,7 +516,7 @@ export default function Dashboard() {
                   className="glass-button save-prefs"
                   onClick={saveMyPreferences}
                   disabled={savingPrefs || !hasUnsavedChanges}
-                  style={{ flex: 2, margin: 0, background: 'var(--accent-primary)', color: 'white', border: 'none', opacity: (!hasUnsavedChanges && !savingPrefs) ? 0.5 : 1 }}
+                  style={{ margin: 0, background: 'var(--accent-primary)', color: 'white', border: 'none', opacity: (!hasUnsavedChanges && !savingPrefs) ? 0.5 : 1 }}
                 >
                   {savingPrefs ? <Loader2 className="lucide-spin" size={18} /> : <Save size={18} />}
                   Save Preferences
