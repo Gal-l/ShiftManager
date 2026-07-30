@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [userType, setUserType] = useState<string>('User');
   const [viewMode, setViewMode] = useState<ViewMode>('next-week');
+  const [mobileSubTab, setMobileSubTab] = useState<'schedule' | 'preferences'>('schedule');
   const [weekId, setWeekId] = useState<string>(getNextWeekId());
 
   const [lockedDays, setLockedDays] = useState<string[]>([]);
@@ -328,9 +329,27 @@ export default function Dashboard() {
           <Loader2 className="lucide-spin" size={48} color="var(--accent-primary)" />
         </div>
       ) : (
+        {/* Mobile Subtabs */}
+        {(viewMode === 'this-week' || viewMode === 'next-week') && (
+          <div className="mobile-subtabs">
+            <button 
+              className={`mobile-subtab-btn ${mobileSubTab === 'schedule' ? 'active' : ''}`}
+              onClick={() => setMobileSubTab('schedule')}
+            >
+              Schedule
+            </button>
+            <button 
+              className={`mobile-subtab-btn ${mobileSubTab === 'preferences' ? 'active' : ''}`}
+              onClick={() => setMobileSubTab('preferences')}
+            >
+              Preferences
+            </button>
+          </div>
+        )}
+
         <div className="dashboard-grid">
           {/* Calendar View */}
-          <div className="glass-panel panel-padding">
+          <div className={`glass-panel panel-padding ${viewMode !== 'history' && viewMode !== 'overall' && mobileSubTab !== 'schedule' ? 'hidden-on-mobile' : ''}`}>
             <h3 className="panel-title">
               <CalendarIcon size={24} color="var(--accent-primary)" />
               Schedule
@@ -454,7 +473,7 @@ export default function Dashboard() {
 
           {/* User Preferences (Hidden in overall and history view) */}
           {viewMode !== 'overall' && viewMode !== 'history' && (
-            <div className="glass-panel panel-padding">
+            <div className={`glass-panel panel-padding ${mobileSubTab !== 'preferences' ? 'hidden-on-mobile' : ''}`}>
               <h3 className="panel-title">
                 Your Preferences
                 {hasUnsavedChanges && (
