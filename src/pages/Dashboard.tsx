@@ -10,6 +10,7 @@ type ViewMode = 'this-week' | 'next-week' | 'history' | 'overall';
 
 export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [userType, setUserType] = useState<string>('User');
   const [viewMode, setViewMode] = useState<ViewMode>('next-week');
   const [weekId, setWeekId] = useState<string>(getNextWeekId());
 
@@ -33,10 +34,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     const user = localStorage.getItem('pickoshifts_current_user');
+    const type = localStorage.getItem('pickoshifts_user_type') || 'User';
     if (!user) {
       navigate('/');
     } else {
       setCurrentUser(user);
+      setUserType(type);
     }
   }, [navigate]);
 
@@ -233,7 +236,7 @@ export default function Dashboard() {
     <div>
       <div className="dashboard-header">
         <div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Hello, {currentUser}!</h2>
+          <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Hello, {currentUser}! <span style={{ fontSize: '1rem', color: 'var(--accent-primary)', fontWeight: 'normal', marginLeft: '8px' }}>({userType})</span></h2>
           <p style={{ color: 'var(--text-secondary)' }}>
             Manage your shifts for {viewMode === 'this-week' ? 'This Week' : viewMode === 'next-week' ? 'Next Week' : 'the week of'} ({weekId})
           </p>
@@ -369,7 +372,7 @@ export default function Dashboard() {
               })}
             </div>
 
-            {viewMode !== 'history' && (
+            {viewMode !== 'history' && userType === 'Admin' && (
               <div className="action-bar" style={{ gap: '12px' }}>
                 <button
                   className="glass-button"

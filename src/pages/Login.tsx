@@ -11,9 +11,10 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleUnlock = () => {
-    if (password === '2727') {
+    if (password === '2727' || password === '7272') {
       setIsUnlocked(true);
       setError(false);
+      localStorage.setItem('pickoshifts_user_type', password === '7272' ? 'Admin' : 'User');
     } else {
       setError(true);
     }
