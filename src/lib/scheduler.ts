@@ -65,8 +65,13 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
     allowedDaysForEmployee[e] = DAYS.filter(d => prefMap[e][d] !== "can not");
   });
 
+  // Randomize the order of employees being processed.
+  // This ensures that exact mathematical ties (like two people having "prefer not" for the same shift)
+  // are broken randomly, fairly distributing the penalty when multiple schedules have the same max score.
+  const randomEmployees = [...EMPLOYEES].sort(() => Math.random() - 0.5);
+
   function solve(empIndex: number, currentScore: number) {
-    if (empIndex === EMPLOYEES.length) {
+    if (empIndex === randomEmployees.length) {
       for (const d of DAYS) {
         if (dayCounts[d] < 2 || dayCounts[d] > 3) return;
       }
@@ -77,7 +82,7 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
       return;
     }
 
-    const emp = EMPLOYEES[empIndex];
+    const emp = randomEmployees[empIndex];
     const locked = empLockedDays[emp];
     const needed = 2 - locked.length;
     
@@ -147,7 +152,7 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
   DAYS.forEach(d => fbDayCounts[d] = 0);
   lockedShifts.forEach(s => fbDayCounts[s.day]++);
 
-  EMPLOYEES.forEach(emp => {
+  randomEmployees.forEach(emp => {
     const locked = empLockedDays[emp];
     const needed = 2 - locked.length;
     if (needed > 0) {
