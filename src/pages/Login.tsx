@@ -9,6 +9,7 @@ export default function Login() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [error, setError] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,19 +17,34 @@ export default function Login() {
     document.title = 'PickoShift';
   }, []);
 
-  const handleUnlock = () => {
-    if (password === '2727' || password === '727272') {
-      setIsUnlocked(true);
-      setError(false);
-      const admin = password === '727272';
-      setIsAdmin(admin);
-      localStorage.setItem('pickoshifts_user_type', admin ? 'Admin' : 'User');
-      if (admin) {
-        document.body.classList.add('admin-mode');
-        document.title = '👑 PickoShift';
+  const handleUnlock = async () => {
+    if (!password) return;
+    setIsAuthenticating(true);
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsUnlocked(true);
+        setError(false);
+        setIsAdmin(data.isAdmin);
+        localStorage.setItem('pickoshifts_user_type', data.isAdmin ? 'Admin' : 'User');
+        if (data.isAdmin) {
+          document.body.classList.add('admin-mode');
+          document.title = '👑 PickoShift';
+        }
+      } else {
+        setError(true);
       }
-    } else {
+    } catch (err) {
+      console.error('Authentication error:', err);
       setError(true);
+    } finally {
+      setIsAuthenticating(false);
     }
   };
 
@@ -79,11 +95,11 @@ export default function Login() {
             <button
               className="primary-button"
               style={{ width: '100%', marginTop: '24px' }}
-              disabled={!password}
+              disabled={!password || isAuthenticating}
               onClick={handleUnlock}
             >
               <Unlock size={20} />
-              Unlock
+              {isAuthenticating ? 'Unlocking...' : 'Unlock'}
             </button>
           </>
         ) : (
