@@ -572,6 +572,17 @@ export default function Dashboard() {
                   {isManualEditMode ? 'Done Editing' : 'Manual Edit'}
                 </button>
                 <button
+                  className="glass-button"
+                  onClick={() => {
+                    fetch('/api/notify-cron', { method: 'POST' })
+                      .then(() => showToast('Push notification triggered!'))
+                      .catch(() => showToast('Failed to trigger notification'));
+                  }}
+                  title="Test Push Notification"
+                >
+                  🔔 Test Push
+                </button>
+                <button
                   className="primary-button"
                   onClick={handleMakeShift}
                   disabled={generating}
