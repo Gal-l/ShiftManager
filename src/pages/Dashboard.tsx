@@ -571,6 +571,21 @@ export default function Dashboard() {
                   <Edit2 size={20} />
                   {isManualEditMode ? 'Done Editing' : 'Manual Edit'}
                 </button>
+                {('Notification' in window && Notification.permission !== 'granted') && (
+                  <button
+                    className="glass-button"
+                    onClick={() => {
+                      import('../lib/push').then(({ subscribeToPushNotifications }) => {
+                        subscribeToPushNotifications(currentUser!);
+                        showToast('Notification permission requested');
+                      });
+                    }}
+                    title="Enable Notifications"
+                    style={{ color: '#fbbf24', borderColor: '#fbbf24' }}
+                  >
+                    🔔 Enable Alerts
+                  </button>
+                )}
                 <button
                   className="glass-button"
                   onClick={() => {

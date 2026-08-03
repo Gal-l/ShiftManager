@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { EMPLOYEES } from '../lib/scheduler';
 import { LogIn, Unlock, Crown } from 'lucide-react';
 
+import { subscribeToPushNotifications } from '../lib/push';
+
 export default function Login() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [password, setPassword] = useState('');
@@ -48,9 +50,11 @@ export default function Login() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (selectedUser) {
       localStorage.setItem('pickoshifts_current_user', selectedUser);
+      // Call this BEFORE navigating so iOS Safari registers the user gesture
+      subscribeToPushNotifications(selectedUser);
       navigate('/dashboard');
     }
   };
