@@ -131,6 +131,6 @@ export default async function handler(req: any, res: any) {
   // Send response
   res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="pickoshift-schedule.ics"');
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate'); // Cache for 1 hour on Vercel Edge
+  res.setHeader('Cache-Control', 'no-store, max-age=0'); // Prevent Vercel caching
   res.status(200).send(icsContent);
 }
