@@ -575,8 +575,15 @@ export default function Dashboard() {
                   className="glass-button"
                   onClick={() => {
                     fetch('/api/notify-cron', { method: 'POST' })
-                      .then(() => showToast('Push notification triggered!'))
-                      .catch(() => showToast('Failed to trigger notification'));
+                      .then(async (res) => {
+                        if (res.ok) {
+                          showToast('Push notification triggered!');
+                        } else {
+                          const err = await res.text();
+                          showToast('Failed to trigger: ' + err);
+                        }
+                      })
+                      .catch((e) => showToast('Failed to trigger notification: ' + e.message));
                   }}
                   title="Test Push Notification"
                 >
