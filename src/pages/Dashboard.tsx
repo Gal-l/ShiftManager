@@ -5,6 +5,7 @@ import { DAYS, Preference, Shift, PreferenceStatus, generateSchedule } from '../
 import { loadPreferences, saveUserPreferences, loadSchedule, saveSchedule } from '../lib/supabase';
 import { getThisWeekId, getNextWeekId, getPreviousWeekId, getPassedDaysInWeek, getDateForDay } from '../lib/dateUtils';
 import { EMPLOYEES } from '../lib/scheduler';
+import { subscribeToPushNotifications } from '../lib/push';
 
 type ViewMode = 'this-week' | 'next-week' | 'history' | 'overall';
 
@@ -44,6 +45,7 @@ export default function Dashboard() {
     } else {
       setCurrentUser(user);
       setUserType(type);
+      subscribeToPushNotifications(user);
     }
   }, [navigate]);
 
@@ -146,10 +148,18 @@ export default function Dashboard() {
 
       await saveUserPreferences(myNewPrefs, weekId, currentUser!);
 
+      let updatedPreferences: Preference[] = [];
       setPreferences(prev => {
         const otherPrefs = prev.filter(p => p.employee !== currentUser);
-        return [...otherPrefs, ...myNewPrefs];
+        updatedPreferences = [...otherPrefs, ...myNewPrefs];
+        return updatedPreferences;
       });
+      
+      const missingEmployees = EMPLOYEES.filter(emp => !updatedPreferences.some(p => p.employee === emp));
+      if (missingEmployees.length === 0) {
+        fetch('/api/notify-all-set', { method: 'POST' }).catch(console.error);
+      }
+      
       // alert("Preferences saved!");
     } catch (error) {
       console.error("Error saving prefs:", error);
