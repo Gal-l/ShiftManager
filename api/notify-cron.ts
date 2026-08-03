@@ -41,8 +41,8 @@ export default async function handler(req: any, res: any) {
     }
 
     const payload = JSON.stringify({
-      title: 'Reminder',
-      body: 'To have opportunity to determine your future, just do it!',
+      title: 'Reminder 📅',
+      body: 'To have the opportunity to determine your future, just do it! 🚀',
       url: '/'
     });
 

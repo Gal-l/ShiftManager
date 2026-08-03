@@ -34,8 +34,8 @@ export default async function handler(req: any, res: any) {
     }
 
     const payload = JSON.stringify({
-      title: 'Preferences Complete 🎉',
-      body: 'Wow, all set! The team is ready. Stay tuned and see your destiny! ✨',
+      title: 'Testing 1, 2, 3... 🎤',
+      body: 'Just checking that you are smiling 😊',
       url: '/'
     });
 
@@ -52,7 +52,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ success: true, message: `Sent to ${subscriptions.length} users` });
   } catch (error) {
-    console.error('Error sending all set notifications:', error);
+    console.error('Error sending test notifications:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

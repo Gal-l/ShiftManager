@@ -574,7 +574,7 @@ export default function Dashboard() {
                 <button
                   className="glass-button"
                   onClick={() => {
-                    fetch('/api/notify-cron', { method: 'POST' })
+                    fetch('/api/notify-test', { method: 'POST' })
                       .then(async (res) => {
                         if (res.ok) {
                           showToast('Push notification triggered!');

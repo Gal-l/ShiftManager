@@ -27,7 +27,7 @@ export default async function handler(req: any, res: any) {
 
     if (error) {
       console.error('Supabase error saving subscription:', error);
-      return res.status(500).json({ error: 'Failed to save subscription' });
+      return res.status(500).json({ error: 'Failed to save subscription', details: error.message, hint: error.hint, code: error.code });
     }
 
     return res.status(200).json({ success: true });

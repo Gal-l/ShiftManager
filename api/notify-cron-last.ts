@@ -15,7 +15,7 @@ if (vapidPublicKey && vapidPrivateKey) {
 }
 
 export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -34,8 +34,8 @@ export default async function handler(req: any, res: any) {
     }
 
     const payload = JSON.stringify({
-      title: 'Preferences Complete 🎉',
-      body: 'Wow, all set! The team is ready. Stay tuned and see your destiny! ✨',
+      title: 'Final Reminder ⚠️',
+      body: 'Last reminder, you choose or I will 😈',
       url: '/'
     });
 
@@ -52,7 +52,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ success: true, message: `Sent to ${subscriptions.length} users` });
   } catch (error) {
-    console.error('Error sending all set notifications:', error);
+    console.error('Error sending cron notifications:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

@@ -35,7 +35,7 @@ export async function subscribeToPushNotifications(employee: string) {
       });
     }
 
-    await fetch('/api/subscribe', {
+    const res = await fetch('/api/subscribe', {
       method: 'POST',
       body: JSON.stringify({
         employee,
@@ -45,6 +45,12 @@ export async function subscribeToPushNotifications(employee: string) {
         'content-type': 'application/json'
       }
     });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.error('Backend rejected subscription:', errData);
+      return;
+    }
 
     console.log('Push notification subscription saved.');
   } catch (error) {
