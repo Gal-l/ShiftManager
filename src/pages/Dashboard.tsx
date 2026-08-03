@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Calendar as CalendarIcon, Check, Ban, Minus, Wand2, Loader2, Save, Trash2, Lock, Unlock } from 'lucide-react';
+import { ChevronLeft, Calendar as CalendarIcon, Check, Ban, Minus, Wand2, Loader2, Save, Trash2, Lock, Unlock, Edit2 } from 'lucide-react';
 import { DAYS, Preference, Shift, PreferenceStatus, generateSchedule } from '../lib/scheduler';
 import { loadPreferences, saveUserPreferences, loadSchedule, saveSchedule } from '../lib/supabase';
 import { getThisWeekId, getNextWeekId, getPreviousWeekId, getPassedDaysInWeek, getDateForDay } from '../lib/dateUtils';
@@ -14,6 +14,9 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>('next-week');
   const [mobileSubTab, setMobileSubTab] = useState<'schedule' | 'preferences'>('schedule');
   const [weekId, setWeekId] = useState<string>(getNextWeekId());
+  const [draggedShift, setDraggedShift] = useState<{employee: string, originalDay: string} | null>(null);
+  const [addEmployeeDay, setAddEmployeeDay] = useState<string | null>(null);
+  const [isManualEditMode, setIsManualEditMode] = useState(false);
 
   const [lockedDays, setLockedDays] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
@@ -239,6 +242,50 @@ export default function Dashboard() {
     });
   };
 
+  const handleDragStart = (employee: string, originalDay: string) => {
+    setDraggedShift({ employee, originalDay });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetDay: string) => {
+    e.preventDefault();
+    if (!draggedShift) return;
+    
+    const { employee, originalDay } = draggedShift;
+    setDraggedShift(null);
+
+    if (originalDay === targetDay) return;
+
+    // Check if employee is already on target day
+    const alreadyOnDay = schedule.some(s => s.employee === employee && s.day === targetDay);
+    if (alreadyOnDay) {
+      showToast(`${employee} is already scheduled on ${targetDay}`);
+      return;
+    }
+
+    const newSchedule = schedule.filter(s => !(s.employee === employee && s.day === originalDay));
+    newSchedule.push({ employee, day: targetDay });
+    
+    setSchedule(newSchedule);
+    await saveSchedule(newSchedule, weekId);
+  };
+
+  const handleRemoveShift = async (employee: string, day: string) => {
+    const newSchedule = schedule.filter(s => !(s.employee === employee && s.day === day));
+    setSchedule(newSchedule);
+    await saveSchedule(newSchedule, weekId);
+  };
+
+  const handleAddShift = async (employee: string, day: string) => {
+    const newSchedule = [...schedule, { employee, day }];
+    setSchedule(newSchedule);
+    setAddEmployeeDay(null);
+    await saveSchedule(newSchedule, weekId);
+  };
+
   const mySavedPrefs = preferences.filter(p => p.employee === currentUser);
   const hasUnsavedChanges = DAYS.some(day => {
     const savedStatus = mySavedPrefs.find(p => p.day === day)?.status || 'neutral';
@@ -356,12 +403,18 @@ export default function Dashboard() {
               Schedule
             </h3>
 
-            <div className="calendar">
+            <div className="calendar" style={{ position: 'relative', zIndex: 20 }}>
               {DAYS.map(day => {
                 const dayShifts = schedule.filter(s => s.day === day);
                 const isPassedDay = weekId === getThisWeekId() && getPassedDaysInWeek().includes(day) && lockedDays.includes(day);
                 return (
-                  <div key={day} className={`day-card glass-panel ${isPassedDay ? 'passed-day' : ''}`} style={{ background: 'rgba(0,0,0,0.1)' }}>
+                  <div 
+                    key={day} 
+                    className={`day-card glass-panel ${isPassedDay ? 'passed-day' : ''}`} 
+                    style={{ background: 'rgba(0,0,0,0.1)', position: 'relative', zIndex: addEmployeeDay === day ? 50 : 1 }}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, day)}
+                  >
                     <div className="day-name" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span>{day}</span>
@@ -402,13 +455,83 @@ export default function Dashboard() {
                         const isPreferNot = preferences.find(p => p.employee === s.employee && p.day === s.day)?.status === 'prefer not';
                         const isCannot = preferences.find(p => p.employee === s.employee && p.day === s.day)?.status === 'can not';
                         return (
-                          <div key={idx} className={`shift-chip ${isPreferred ? 'preferred' : ''} ${isPreferNot ? 'prefer-not-assigned' : ''} ${isCannot ? 'can-not-assigned' : ''}`}>
-                            {s.employee} {isPreferred && <span style={{ fontSize: '0.8rem' }}>✨</span>}
+                          <div 
+                            key={idx} 
+                            className={`shift-chip ${isPreferred ? 'preferred' : ''} ${isPreferNot ? 'prefer-not-assigned' : ''} ${isCannot ? 'can-not-assigned' : ''}`}
+                            draggable={userType === 'Admin' && (viewMode === 'this-week' || viewMode === 'next-week') && isManualEditMode}
+                            onDragStart={() => handleDragStart(s.employee, s.day)}
+                            style={{ cursor: (userType === 'Admin' && isManualEditMode) ? 'grab' : 'default', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                          >
+                            <div>
+                              {s.employee} {isPreferred && <span style={{ fontSize: '0.8rem' }}>✨</span>}
+                            </div>
+                            {userType === 'Admin' && (viewMode === 'this-week' || viewMode === 'next-week') && isManualEditMode && (
+                              <button 
+                                onClick={() => handleRemoveShift(s.employee, s.day)}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0 4px', fontSize: '1.2rem', lineHeight: 1 }}
+                                title="Remove"
+                              >
+                                &times;
+                              </button>
+                            )}
                           </div>
                         );
                       })
                     ) : (
                       <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic' }}>No shifts</span>
+                    )}
+                    {userType === 'Admin' && (viewMode === 'this-week' || viewMode === 'next-week') && isManualEditMode && (
+                      <div style={{ marginTop: '12px', position: 'relative' }}>
+                        {addEmployeeDay === day ? (
+                          <div 
+                            className="glass-panel" 
+                            style={{ 
+                              position: 'absolute', 
+                              top: '0', 
+                              left: '50%', 
+                              transform: 'translateX(-50%)',
+                              width: '160px', 
+                              zIndex: 50, 
+                              display: 'flex', 
+                              flexDirection: 'column',
+                              gap: '4px',
+                              padding: '12px',
+                              background: 'var(--bg-color)',
+                              border: '1px solid var(--accent-primary)',
+                              boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '6px' }}>
+                              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Select Employee</span>
+                              <button onClick={() => setAddEmployeeDay(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 0.5, marginLeft: '8px' }}>&times;</button>
+                            </div>
+                            <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', paddingRight: '4px' }}>
+                              {EMPLOYEES.filter(emp => !dayShifts.some(s => s.employee === emp)).length === 0 ? (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px 0' }}>All scheduled</span>
+                              ) : (
+                                EMPLOYEES.filter(emp => !dayShifts.some(s => s.employee === emp)).map(emp => (
+                                  <button 
+                                    key={emp}
+                                    className="glass-button"
+                                    onClick={() => handleAddShift(emp, day)}
+                                    style={{ padding: '6px', fontSize: '0.9rem', width: '100%', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: 'none' }}
+                                  >
+                                    {emp}
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <button 
+                            className="glass-button" 
+                            onClick={() => setAddEmployeeDay(day)}
+                            style={{ width: '100%', padding: '4px', fontSize: '0.9rem', color: 'var(--text-secondary)', borderStyle: 'dashed' }}
+                          >
+                            + Add
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
@@ -425,6 +548,18 @@ export default function Dashboard() {
                 >
                   <Trash2 size={20} />
                   Clear
+                </button>
+                <button
+                  className={`glass-button ${isManualEditMode ? 'active' : ''}`}
+                  onClick={() => setIsManualEditMode(!isManualEditMode)}
+                  style={{ 
+                    color: isManualEditMode ? 'white' : 'var(--text-primary)', 
+                    background: isManualEditMode ? 'var(--accent-primary)' : 'transparent',
+                    borderColor: isManualEditMode ? 'var(--accent-primary)' : 'var(--glass-border)'
+                  }}
+                >
+                  <Edit2 size={20} />
+                  {isManualEditMode ? 'Done Editing' : 'Manual Edit'}
                 </button>
                 <button
                   className="primary-button"
