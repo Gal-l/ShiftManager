@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [draggedShift, setDraggedShift] = useState<{employee: string, originalDay: string} | null>(null);
   const [addEmployeeDay, setAddEmployeeDay] = useState<string | null>(null);
   const [isManualEditMode, setIsManualEditMode] = useState(false);
+  const [preventConsecutive, setPreventConsecutive] = useState<Record<string, boolean>>({});
 
   const [lockedDays, setLockedDays] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
@@ -46,6 +47,13 @@ export default function Dashboard() {
       setCurrentUser(user);
       setUserType(type);
       subscribeToPushNotifications(user);
+    }
+    
+    const savedConsecutive = localStorage.getItem('pickoshifts_prevent_consecutive');
+    if (savedConsecutive) {
+      try {
+        setPreventConsecutive(JSON.parse(savedConsecutive));
+      } catch (e) {}
     }
   }, [navigate]);
 
@@ -141,6 +149,12 @@ export default function Dashboard() {
     }
   };
 
+  const togglePreventConsecutive = (emp: string) => {
+    const newVal = { ...preventConsecutive, [emp]: !preventConsecutive[emp] };
+    setPreventConsecutive(newVal);
+    localStorage.setItem('pickoshifts_prevent_consecutive', JSON.stringify(newVal));
+  };
+
   const saveMyPreferences = async () => {
     setSavingPrefs(true);
     try {
@@ -206,7 +220,7 @@ export default function Dashboard() {
         await new Promise(r => setTimeout(r, 600));
 
         const lockedShifts = schedule.filter(s => lockedDays.includes(s.day));
-        const newSchedule = generateSchedule(preferences, lockedShifts);
+        const newSchedule = generateSchedule(preferences, lockedShifts, preventConsecutive);
 
         await saveSchedule(newSchedule, weekId);
         setSchedule(newSchedule);
@@ -612,6 +626,28 @@ export default function Dashboard() {
                   {generating ? <Loader2 className="lucide-spin" size={20} /> : <Wand2 size={20} />}
                   {generating ? 'Generating...' : 'Make Shift'}
                 </button>
+              </div>
+            )}
+
+            {viewMode !== 'history' && userType === 'Admin' && (
+              <div className="admin-settings glass-panel panel-padding" style={{ marginTop: '24px' }}>
+                <h4 style={{ marginBottom: '12px', fontSize: '1.1rem', color: 'var(--text-primary)' }}>Scheduling Rules</h4>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  By default, the algorithm ALLOWS scheduling an employee for two consecutive days. You can toggle this rule ON (preventing consecutive days) for specific employees below.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
+                  {EMPLOYEES.map(emp => (
+                    <label key={emp} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={preventConsecutive[emp] || false}
+                        onChange={() => togglePreventConsecutive(emp)}
+                        style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }}
+                      />
+                      Prevent consecutive days for {emp}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
           </div>

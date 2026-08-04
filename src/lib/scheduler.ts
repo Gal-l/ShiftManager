@@ -22,7 +22,15 @@ const DAY_WEIGHTS: Record<string, number> = {
   "Thursday": 0.05
 };
 
-export function generateSchedule(preferences: Preference[], lockedShifts: Shift[] = []): Shift[] {
+const DAY_INDEX: Record<string, number> = {
+  "Sunday": 0,
+  "Monday": 1,
+  "Tuesday": 2,
+  "Wednesday": 3,
+  "Thursday": 4
+};
+
+export function generateSchedule(preferences: Preference[], lockedShifts: Shift[] = [], preventConsecutive: Record<string, boolean> = {}): Shift[] {
   // 1. Build a fast lookup for preferences
   const prefMap: Record<string, Record<string, PreferenceStatus>> = {};
   EMPLOYEES.forEach(e => {
@@ -103,7 +111,18 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
         dayCounts[day1]++;
         currentSchedule.push({ employee: emp, day: day1 });
         const prefScore1 = prefMap[emp][day1] === "prefer" ? 1 : (prefMap[emp][day1] === "prefer not" ? -10 : 0);
-        const score1 = prefScore1 + DAY_WEIGHTS[day1];
+        
+        let consecutivePenalty = 0;
+        if (preventConsecutive[emp]) {
+          for (const lDay of locked) {
+            if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1) {
+              consecutivePenalty = -50;
+              break;
+            }
+          }
+        }
+
+        const score1 = prefScore1 + DAY_WEIGHTS[day1] + consecutivePenalty;
         
         solve(empIndex + 1, currentScore + score1);
 
@@ -125,10 +144,24 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
           
           const prefScore1 = prefMap[emp][day1] === "prefer" ? 1 : (prefMap[emp][day1] === "prefer not" ? -10 : 0);
           const prefScore2 = prefMap[emp][day2] === "prefer" ? 1 : (prefMap[emp][day2] === "prefer not" ? -10 : 0);
+          
+          let consecutivePenalty = 0;
+          if (preventConsecutive[emp]) {
+            if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[day2]) === 1) {
+              consecutivePenalty -= 50;
+            }
+            // Check against locked days as well just in case (though needed === 2 means locked is empty, but for safety)
+            for (const lDay of locked) {
+              if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1 || Math.abs(DAY_INDEX[day2] - DAY_INDEX[lDay]) === 1) {
+                consecutivePenalty -= 50;
+              }
+            }
+          }
+
           const score1 = prefScore1 + DAY_WEIGHTS[day1];
           const score2 = prefScore2 + DAY_WEIGHTS[day2];
 
-          solve(empIndex + 1, currentScore + score1 + score2);
+          solve(empIndex + 1, currentScore + score1 + score2 + consecutivePenalty);
 
           dayCounts[day1]--;
           dayCounts[day2]--;
