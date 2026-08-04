@@ -116,7 +116,7 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
         if (preventConsecutive[emp]) {
           for (const lDay of locked) {
             if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1) {
-              consecutivePenalty = -50;
+              consecutivePenalty = -0.1;
               break;
             }
           }
@@ -148,12 +148,12 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
           let consecutivePenalty = 0;
           if (preventConsecutive[emp]) {
             if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[day2]) === 1) {
-              consecutivePenalty -= 50;
+              consecutivePenalty -= 0.1;
             }
             // Check against locked days as well just in case (though needed === 2 means locked is empty, but for safety)
             for (const lDay of locked) {
               if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1 || Math.abs(DAY_INDEX[day2] - DAY_INDEX[lDay]) === 1) {
-                consecutivePenalty -= 50;
+                consecutivePenalty -= 0.1;
               }
             }
           }

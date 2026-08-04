@@ -633,7 +633,7 @@ export default function Dashboard() {
               <div className="admin-settings glass-panel panel-padding" style={{ marginTop: '24px' }}>
                 <h4 style={{ marginBottom: '12px', fontSize: '1.1rem', color: 'var(--text-primary)' }}>Scheduling Rules</h4>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                  By default, the algorithm ALLOWS scheduling an employee for two consecutive days. You can toggle this rule ON (preventing consecutive days) for specific employees below.
+                  By default, the algorithm ALLOWS scheduling an employee for two consecutive days. You can toggle this rule ON (to gently avoid consecutive days) for specific employees below.
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
                   {EMPLOYEES.map(emp => (
@@ -644,7 +644,7 @@ export default function Dashboard() {
                         onChange={() => togglePreventConsecutive(emp)}
                         style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }}
                       />
-                      Prevent consecutive days for {emp}
+                      Avoid consecutive days for {emp}
                     </label>
                   ))}
                 </div>
