@@ -74,3 +74,45 @@ export async function loadSchedule(week: string): Promise<Shift[]> {
   if (error) throw new Error(error.message);
   return data as Shift[];
 }
+
+export async function setScheduleReleased(week: string, isReleased: boolean) {
+  if (isLocal) {
+    const key = `pickoshifts_released_${week}`;
+    localStorage.setItem(key, JSON.stringify(isReleased));
+    return;
+  }
+
+  const employee = '_SYSTEM_';
+  const day = 'RELEASED';
+  
+  await supabase!.from('preferences').delete().eq('week', week).eq('employee', employee).eq('day', day);
+  
+  if (isReleased) {
+    const { error } = await supabase!.from('preferences').insert([{
+      employee,
+      day,
+      status: 'prefer',
+      week
+    }]);
+    if (error) throw new Error(error.message);
+  }
+}
+
+export async function isScheduleReleased(week: string): Promise<boolean> {
+  if (isLocal) {
+    const key = `pickoshifts_released_${week}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : false;
+  }
+
+  const { data, error } = await supabase!
+    .from('preferences')
+    .select('*')
+    .eq('week', week)
+    .eq('employee', '_SYSTEM_')
+    .eq('day', 'RELEASED');
+    
+  if (error) throw new Error(error.message);
+  return data && data.length > 0;
+}
+

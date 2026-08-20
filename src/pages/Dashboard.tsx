@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, Check, Ban, Minus, Wand2, Loader2, Save, Trash2, Lock, Unlock, Edit2 } from 'lucide-react';
 import { DAYS, Preference, Shift, PreferenceStatus, generateSchedule } from '../lib/scheduler';
-import { loadPreferences, saveUserPreferences, loadSchedule, saveSchedule } from '../lib/supabase';
+import { loadPreferences, saveUserPreferences, loadSchedule, saveSchedule, isScheduleReleased, setScheduleReleased } from '../lib/supabase';
 import { getThisWeekId, getNextWeekId, getPreviousWeekId, getPassedDaysInWeek, getDateForDay } from '../lib/dateUtils';
 import { EMPLOYEES } from '../lib/scheduler';
 import { subscribeToPushNotifications } from '../lib/push';
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [addEmployeeDay, setAddEmployeeDay] = useState<string | null>(null);
   const [isManualEditMode, setIsManualEditMode] = useState(false);
   const [preventConsecutive, setPreventConsecutive] = useState<Record<string, boolean>>({});
+  const [isReleased, setIsReleased] = useState(false);
 
   const [lockedDays, setLockedDays] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
@@ -89,8 +90,10 @@ export default function Dashboard() {
     try {
       const prefs = await loadPreferences(targetWeek);
       const sched = await loadSchedule(targetWeek);
+      const released = await isScheduleReleased(targetWeek);
       setPreferences(prefs);
       setSchedule(sched);
+      setIsReleased(released);
 
       // Initialize local user prefs state
       const myPrefs = prefs.filter(p => p.employee === currentUser);
@@ -310,6 +313,20 @@ export default function Dashboard() {
     await saveSchedule(newSchedule, weekId);
   };
 
+  const handleReleaseSchedule = async () => {
+    setGenerating(true);
+    try {
+      await setScheduleReleased(weekId, true);
+      setIsReleased(true);
+      fetch('/api/notify-release', { method: 'POST' }).catch(console.error);
+      showToast('Schedule released and team notified! 🎉');
+    } catch (e: any) {
+      console.error(e);
+      showToast('Failed to release schedule: ' + e.message);
+    }
+    setGenerating(false);
+  };
+
   const mySavedPrefs = preferences.filter(p => p.employee === currentUser);
   const hasUnsavedChanges = DAYS.some(day => {
     const savedStatus = mySavedPrefs.find(p => p.day === day)?.status || 'neutral';
@@ -428,8 +445,14 @@ export default function Dashboard() {
             </h3>
 
             <div className="calendar" style={{ position: 'relative', zIndex: 20 }}>
-              {DAYS.map(day => {
-                const dayShifts = schedule.filter(s => s.day === day);
+              {(viewMode === 'next-week' && userType !== 'Admin' && !isReleased) ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <CalendarIcon size={48} style={{ margin: '0 auto 16px', opacity: 0.5, display: 'inline-block' }} />
+                  <p>The schedule for next week has not been released yet.</p>
+                </div>
+              ) : (
+                DAYS.map(day => {
+                  const dayShifts = schedule.filter(s => s.day === day);
                 const isPassedDay = weekId === getThisWeekId() && getPassedDaysInWeek().includes(day) && lockedDays.includes(day);
                 return (
                   <div 
@@ -559,7 +582,7 @@ export default function Dashboard() {
                     )}
                   </div>
                 );
-              })}
+              }))}
             </div>
 
             {viewMode !== 'history' && userType === 'Admin' && (
@@ -625,6 +648,15 @@ export default function Dashboard() {
                 >
                   {generating ? <Loader2 className="lucide-spin" size={20} /> : <Wand2 size={20} />}
                   {generating ? 'Generating...' : 'Make Shift'}
+                </button>
+                <button
+                  className="primary-button"
+                  onClick={handleReleaseSchedule}
+                  disabled={generating || isReleased}
+                  style={{ background: isReleased ? 'var(--glass-border)' : '#10b981' }}
+                  title="Release schedule to the team"
+                >
+                  {isReleased ? 'Released' : 'Release'}
                 </button>
               </div>
             )}
