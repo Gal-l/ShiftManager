@@ -320,9 +320,9 @@ export default function Dashboard() {
       setIsReleased(true);
       fetch('/api/notify-release', { method: 'POST' }).catch(console.error);
       showToast('Schedule released and team notified! 🎉');
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      showToast('Failed to release schedule: ' + e.message);
+      showToast('Failed to release schedule: ' + (e as Error).message);
     }
     setGenerating(false);
   };
