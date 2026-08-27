@@ -110,7 +110,7 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
 
         dayCounts[day1]++;
         currentSchedule.push({ employee: emp, day: day1 });
-        const prefScore1 = prefMap[emp][day1] === "prefer" ? 1 : (prefMap[emp][day1] === "prefer not" ? -10 : 0);
+        const prefScore1 = prefMap[emp][day1] === "prefer" ? 50 : (prefMap[emp][day1] === "prefer not" ? -500 : 0);
         
         let consecutivePenalty = 0;
         if (preventConsecutive[emp]) {
@@ -142,8 +142,8 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
           currentSchedule.push({ employee: emp, day: day1 });
           currentSchedule.push({ employee: emp, day: day2 });
           
-          const prefScore1 = prefMap[emp][day1] === "prefer" ? 1 : (prefMap[emp][day1] === "prefer not" ? -10 : 0);
-          const prefScore2 = prefMap[emp][day2] === "prefer" ? 1 : (prefMap[emp][day2] === "prefer not" ? -10 : 0);
+          const prefScore1 = prefMap[emp][day1] === "prefer" ? 50 : (prefMap[emp][day1] === "prefer not" ? -500 : 0);
+          const prefScore2 = prefMap[emp][day2] === "prefer" ? 50 : (prefMap[emp][day2] === "prefer not" ? -500 : 0);
           
           let consecutivePenalty = 0;
           if (preventConsecutive[emp]) {
@@ -193,14 +193,15 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
         
         allowed.sort((a, b) => {
           if (fbDayCounts[a] !== fbDayCounts[b]) {
-            return fbDayCounts[a] - fbDayCounts[b]; // Fill emptiest days first
+            return fbDayCounts[a] - fbDayCounts[b]; // Priority 1: Fill emptiest days
           }
           const prefA = prefMap[emp][a] === "prefer" ? 1 : (prefMap[emp][a] === "prefer not" ? -1 : 0);
           const prefB = prefMap[emp][b] === "prefer" ? 1 : (prefMap[emp][b] === "prefer not" ? -1 : 0);
+          
           if (prefA !== prefB) {
-            return prefB - prefA; // Prefer user's selection
+            return prefB - prefA; // Priority 2: Respect user's selection (Prefer > Neutral > Prefer Not)
           }
-          return DAY_WEIGHTS[b] - DAY_WEIGHTS[a]; // Push to end of week
+          return DAY_WEIGHTS[b] - DAY_WEIGHTS[a]; // Priority 3: Push to end of week
         });
 
         for (let i = 0; i < Math.min(needed, allowed.length); i++) {
