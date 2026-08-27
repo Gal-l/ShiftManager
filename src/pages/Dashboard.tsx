@@ -457,7 +457,7 @@ export default function Dashboard() {
             </h3>
 
             <div className="calendar" style={{ position: 'relative', zIndex: 20 }}>
-              {(viewMode === 'next-week' && userType !== 'Admin' && !isReleased) ? (
+              {(weekId === getNextWeekId() && userType !== 'Admin' && !isReleased) ? (
                 <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   <CalendarIcon size={48} style={{ margin: '0 auto 16px', opacity: 0.5, display: 'inline-block' }} />
                   <p>The schedule for next week has not been released yet.</p>
@@ -709,41 +709,34 @@ export default function Dashboard() {
           {viewMode === 'overall' && (
             <div className="glass-panel panel-padding" style={{ gridColumn: '1 / -1' }}>
               <h3 className="panel-title">Overall Employee Preferences</h3>
-              {(weekId === getNextWeekId() && userType !== 'Admin' && !isReleased) ? (
-                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  <CalendarIcon size={48} style={{ margin: '0 auto 16px', opacity: 0.5, display: 'inline-block' }} />
-                  <p>The schedule for next week has not been released yet.</p>
-                </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="overall-table">
-                    <thead>
-                      <tr>
-                        <th>Employee</th>
-                        {DAYS.map(day => <th key={day}>{day}</th>)}
+              <div style={{ overflowX: 'auto' }}>
+                <table className="overall-table">
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      {DAYS.map(day => <th key={day}>{day}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {EMPLOYEES.map(emp => (
+                      <tr key={emp}>
+                        <td style={{ fontWeight: 600 }}>{emp}</td>
+                        {DAYS.map(day => {
+                          const status = preferences.find(p => p.employee === emp && p.day === day)?.status || 'neutral';
+                          return (
+                            <td key={day}>
+                              {status === 'prefer' && <span className="status-badge prefer">Prefer</span>}
+                              {status === 'prefer not' && <span className="status-badge not-prefer">Prefer Not</span>}
+                              {status === 'can not' && <span className="status-badge can-not">Can Not</span>}
+                              {status === 'neutral' && <span className="status-badge neutral">-</span>}
+                            </td>
+                          );
+                        })}
                       </tr>
-                    </thead>
-                    <tbody>
-                      {EMPLOYEES.map(emp => (
-                        <tr key={emp}>
-                          <td style={{ fontWeight: 600 }}>{emp}</td>
-                          {DAYS.map(day => {
-                            const status = preferences.find(p => p.employee === emp && p.day === day)?.status || 'neutral';
-                            return (
-                              <td key={day}>
-                                {status === 'prefer' && <span className="status-badge prefer">Prefer</span>}
-                                {status === 'prefer not' && <span className="status-badge not-prefer">Prefer Not</span>}
-                                {status === 'can not' && <span className="status-badge can-not">Can Not</span>}
-                                {status === 'neutral' && <span className="status-badge neutral">-</span>}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
