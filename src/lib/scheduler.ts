@@ -80,11 +80,20 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
 
   function solve(empIndex: number, currentScore: number) {
     if (empIndex === randomEmployees.length) {
+      let schedulePenalty = 0;
       for (const d of DAYS) {
-        if (dayCounts[d] < 2 || dayCounts[d] > 3) return;
+        const count = dayCounts[d];
+        if (count === 0) schedulePenalty -= 100000;
+        else if (count === 1) schedulePenalty -= 10000;
+        else if (count === 2) schedulePenalty += 1000;
+        else if (count === 3) schedulePenalty += 500;
+        else if (count === 4) schedulePenalty -= 5000;
+        else if (count > 4) schedulePenalty -= 20000;
       }
-      if (currentScore > bestScore) {
-        bestScore = currentScore;
+      
+      const finalScore = currentScore + schedulePenalty;
+      if (finalScore > bestScore) {
+        bestScore = finalScore;
         bestSchedule = [...currentSchedule];
       }
       return;
