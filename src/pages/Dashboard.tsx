@@ -624,10 +624,8 @@ export default function Dashboard() {
                   <button
                     className="glass-button"
                     onClick={() => {
-                      import('../lib/push').then(({ subscribeToPushNotifications }) => {
-                        subscribeToPushNotifications(currentUser!);
-                        showToast('Notification permission requested');
-                      });
+                      subscribeToPushNotifications(currentUser!);
+                      showToast('Notification permission requested');
                     }}
                     title="Enable Notifications"
                     style={{ color: '#fbbf24', borderColor: '#fbbf24' }}
