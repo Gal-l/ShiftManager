@@ -113,70 +113,90 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
     const allowed = allowedDaysForEmployee[emp].filter(d => !locked.includes(d));
 
     if (needed === 1) {
-      for (let i = 0; i < allowed.length; i++) {
-        const day1 = allowed[i];
-        if (dayCounts[day1] >= 3) continue;
-
-        dayCounts[day1]++;
-        currentSchedule.push({ employee: emp, day: day1 });
-        const prefScore1 = prefMap[emp][day1] === "prefer" ? 50 : (prefMap[emp][day1] === "prefer not" ? -500 : 0);
-        
-        let consecutivePenalty = 0;
-        if (preventConsecutive[emp]) {
-          for (const lDay of locked) {
-            if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1) {
-              consecutivePenalty = -0.1;
-              break;
-            }
-          }
-        }
-
-        const score1 = prefScore1 + DAY_WEIGHTS[day1] + consecutivePenalty;
-        
-        solve(empIndex + 1, currentScore + score1);
-
-        dayCounts[day1]--;
-        currentSchedule.pop();
-      }
-    } else if (needed === 2) {
-      for (let i = 0; i < allowed.length - 1; i++) {
-        for (let j = i + 1; j < allowed.length; j++) {
+      if (allowed.length >= 1) {
+        for (let i = 0; i < allowed.length; i++) {
           const day1 = allowed[i];
-          const day2 = allowed[j];
-
-          if (dayCounts[day1] >= 3 || dayCounts[day2] >= 3) continue;
+          if (dayCounts[day1] >= 3) continue;
 
           dayCounts[day1]++;
-          dayCounts[day2]++;
           currentSchedule.push({ employee: emp, day: day1 });
-          currentSchedule.push({ employee: emp, day: day2 });
-          
           const prefScore1 = prefMap[emp][day1] === "prefer" ? 50 : (prefMap[emp][day1] === "prefer not" ? -500 : 0);
-          const prefScore2 = prefMap[emp][day2] === "prefer" ? 50 : (prefMap[emp][day2] === "prefer not" ? -500 : 0);
           
           let consecutivePenalty = 0;
           if (preventConsecutive[emp]) {
-            if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[day2]) === 1) {
-              consecutivePenalty -= 0.1;
-            }
-            // Check against locked days as well just in case (though needed === 2 means locked is empty, but for safety)
             for (const lDay of locked) {
-              if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1 || Math.abs(DAY_INDEX[day2] - DAY_INDEX[lDay]) === 1) {
-                consecutivePenalty -= 0.1;
+              if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1) {
+                consecutivePenalty = -0.1;
+                break;
               }
             }
           }
 
-          const score1 = prefScore1 + DAY_WEIGHTS[day1];
-          const score2 = prefScore2 + DAY_WEIGHTS[day2];
-
-          solve(empIndex + 1, currentScore + score1 + score2 + consecutivePenalty);
+          const score1 = prefScore1 + DAY_WEIGHTS[day1] + consecutivePenalty;
+          
+          solve(empIndex + 1, currentScore + score1);
 
           dayCounts[day1]--;
-          dayCounts[day2]--;
-          currentSchedule.pop();
           currentSchedule.pop();
         }
+      } else {
+        solve(empIndex + 1, currentScore - 1000); // Penalty for missing a shift
+      }
+    } else if (needed === 2) {
+      if (allowed.length >= 2) {
+        for (let i = 0; i < allowed.length - 1; i++) {
+          for (let j = i + 1; j < allowed.length; j++) {
+            const day1 = allowed[i];
+            const day2 = allowed[j];
+
+            if (dayCounts[day1] >= 3 || dayCounts[day2] >= 3) continue;
+
+            dayCounts[day1]++;
+            dayCounts[day2]++;
+            currentSchedule.push({ employee: emp, day: day1 });
+            currentSchedule.push({ employee: emp, day: day2 });
+            
+            const prefScore1 = prefMap[emp][day1] === "prefer" ? 50 : (prefMap[emp][day1] === "prefer not" ? -500 : 0);
+            const prefScore2 = prefMap[emp][day2] === "prefer" ? 50 : (prefMap[emp][day2] === "prefer not" ? -500 : 0);
+            
+            let consecutivePenalty = 0;
+            if (preventConsecutive[emp]) {
+              if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[day2]) === 1) {
+                consecutivePenalty -= 0.1;
+              }
+              // Check against locked days as well just in case (though needed === 2 means locked is empty, but for safety)
+              for (const lDay of locked) {
+                if (Math.abs(DAY_INDEX[day1] - DAY_INDEX[lDay]) === 1 || Math.abs(DAY_INDEX[day2] - DAY_INDEX[lDay]) === 1) {
+                  consecutivePenalty -= 0.1;
+                }
+              }
+            }
+
+            const score1 = prefScore1 + DAY_WEIGHTS[day1];
+            const score2 = prefScore2 + DAY_WEIGHTS[day2];
+
+            solve(empIndex + 1, currentScore + score1 + score2 + consecutivePenalty);
+
+            dayCounts[day1]--;
+            dayCounts[day2]--;
+            currentSchedule.pop();
+            currentSchedule.pop();
+          }
+        }
+      } else if (allowed.length === 1) {
+        const day1 = allowed[0];
+        if (dayCounts[day1] < 3) {
+          dayCounts[day1]++;
+          currentSchedule.push({ employee: emp, day: day1 });
+          const prefScore1 = prefMap[emp][day1] === "prefer" ? 50 : (prefMap[emp][day1] === "prefer not" ? -500 : 0);
+          solve(empIndex + 1, currentScore + prefScore1 + DAY_WEIGHTS[day1] - 1000); // Penalty for missing a shift
+          dayCounts[day1]--;
+          currentSchedule.pop();
+        } else {
+          solve(empIndex + 1, currentScore - 2000);
+        }
+      } else {
+        solve(empIndex + 1, currentScore - 2000); // Penalty for missing 2 shifts
       }
     }
   }
