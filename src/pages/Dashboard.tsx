@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [addEmployeeDay, setAddEmployeeDay] = useState<string | null>(null);
   const [isManualEditMode, setIsManualEditMode] = useState(false);
   const [preventConsecutive, setPreventConsecutive] = useState<Record<string, boolean>>({});
+  const [noAloneMode, setNoAloneMode] = useState<boolean>(false);
   const [isReleased, setIsReleased] = useState(false);
 
   const [lockedDays, setLockedDays] = useState<string[]>([]);
@@ -55,6 +56,11 @@ export default function Dashboard() {
       try {
         setPreventConsecutive(JSON.parse(savedConsecutive));
       } catch (e) {}
+    }
+
+    const savedNoAlone = localStorage.getItem('pickoshifts_no_alone_mode');
+    if (savedNoAlone) {
+      setNoAloneMode(savedNoAlone === 'true');
     }
   }, [navigate]);
 
@@ -158,6 +164,12 @@ export default function Dashboard() {
     localStorage.setItem('pickoshifts_prevent_consecutive', JSON.stringify(newVal));
   };
 
+  const toggleNoAloneMode = () => {
+    const newVal = !noAloneMode;
+    setNoAloneMode(newVal);
+    localStorage.setItem('pickoshifts_no_alone_mode', String(newVal));
+  };
+
   const saveMyPreferences = async () => {
     setSavingPrefs(true);
     try {
@@ -223,7 +235,7 @@ export default function Dashboard() {
         await new Promise(r => setTimeout(r, 600));
 
         const lockedShifts = schedule.filter(s => lockedDays.includes(s.day));
-        const newSchedule = generateSchedule(preferences, lockedShifts, preventConsecutive);
+        const newSchedule = generateSchedule(preferences, lockedShifts, preventConsecutive, noAloneMode);
 
         await saveSchedule(newSchedule, weekId);
         setSchedule(newSchedule);
@@ -680,6 +692,17 @@ export default function Dashboard() {
                     </label>
                   ))}
                 </div>
+
+                <h4 style={{ marginTop: '20px', marginBottom: '12px', fontSize: '1.1rem', color: 'var(--text-primary)' }}>Global Algorithm Mode</h4>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={noAloneMode}
+                    onChange={toggleNoAloneMode}
+                    style={{ accentColor: 'var(--accent-primary)', width: '16px', height: '16px' }}
+                  />
+                  <strong>No Alone Mode:</strong> If a day can only have 1 person assigned, do not assign anyone (0 people) instead of 1.
+                </label>
               </div>
             )}
           </div>

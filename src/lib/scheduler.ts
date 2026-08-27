@@ -30,7 +30,7 @@ const DAY_INDEX: Record<string, number> = {
   "Thursday": 4
 };
 
-export function generateSchedule(preferences: Preference[], lockedShifts: Shift[] = [], preventConsecutive: Record<string, boolean> = {}): Shift[] {
+export function generateSchedule(preferences: Preference[], lockedShifts: Shift[] = [], preventConsecutive: Record<string, boolean> = {}, noAloneMode: boolean = false): Shift[] {
   // 1. Build a fast lookup for preferences
   const prefMap: Record<string, Record<string, PreferenceStatus>> = {};
   EMPLOYEES.forEach(e => {
@@ -174,42 +174,53 @@ export function generateSchedule(preferences: Preference[], lockedShifts: Shift[
 
   solve(0, 0);
 
+  let finalSchedule: Shift[] = [];
   if (bestSchedule.length > 0) {
-    return bestSchedule;
-  }
-  
-  // FALLBACK ALGORITHM
-  // If no strict valid schedule could be found, assign greedily
-  const fallbackSchedule: Shift[] = [...lockedShifts];
-  const fbDayCounts: Record<string, number> = {};
-  DAYS.forEach(d => fbDayCounts[d] = 0);
-  lockedShifts.forEach(s => fbDayCounts[s.day]++);
+    finalSchedule = bestSchedule;
+  } else {
+    // FALLBACK ALGORITHM
+    // If no strict valid schedule could be found, assign greedily
+    const fallbackSchedule: Shift[] = [...lockedShifts];
+    const fbDayCounts: Record<string, number> = {};
+    DAYS.forEach(d => fbDayCounts[d] = 0);
+    lockedShifts.forEach(s => fbDayCounts[s.day]++);
 
-  randomEmployees.forEach(emp => {
-    const locked = empLockedDays[emp];
-    const needed = 2 - locked.length;
-    if (needed > 0) {
-      let allowed = DAYS.filter(d => prefMap[emp][d] !== "can not" && !locked.includes(d));
-      
-      allowed.sort((a, b) => {
-        if (fbDayCounts[a] !== fbDayCounts[b]) {
-          return fbDayCounts[a] - fbDayCounts[b]; // Fill emptiest days first
-        }
-        const prefA = prefMap[emp][a] === "prefer" ? 1 : (prefMap[emp][a] === "prefer not" ? -1 : 0);
-        const prefB = prefMap[emp][b] === "prefer" ? 1 : (prefMap[emp][b] === "prefer not" ? -1 : 0);
-        if (prefA !== prefB) {
-          return prefB - prefA; // Prefer user's selection
-        }
-        return DAY_WEIGHTS[b] - DAY_WEIGHTS[a]; // Push to end of week
-      });
+    randomEmployees.forEach(emp => {
+      const locked = empLockedDays[emp];
+      const needed = 2 - locked.length;
+      if (needed > 0) {
+        let allowed = DAYS.filter(d => prefMap[emp][d] !== "can not" && !locked.includes(d));
+        
+        allowed.sort((a, b) => {
+          if (fbDayCounts[a] !== fbDayCounts[b]) {
+            return fbDayCounts[a] - fbDayCounts[b]; // Fill emptiest days first
+          }
+          const prefA = prefMap[emp][a] === "prefer" ? 1 : (prefMap[emp][a] === "prefer not" ? -1 : 0);
+          const prefB = prefMap[emp][b] === "prefer" ? 1 : (prefMap[emp][b] === "prefer not" ? -1 : 0);
+          if (prefA !== prefB) {
+            return prefB - prefA; // Prefer user's selection
+          }
+          return DAY_WEIGHTS[b] - DAY_WEIGHTS[a]; // Push to end of week
+        });
 
-      for (let i = 0; i < Math.min(needed, allowed.length); i++) {
-        const pickedDay = allowed[i];
-        fallbackSchedule.push({ employee: emp, day: pickedDay });
-        fbDayCounts[pickedDay]++;
+        for (let i = 0; i < Math.min(needed, allowed.length); i++) {
+          const pickedDay = allowed[i];
+          fallbackSchedule.push({ employee: emp, day: pickedDay });
+          fbDayCounts[pickedDay]++;
+        }
       }
-    }
-  });
+    });
+    
+    finalSchedule = fallbackSchedule;
+  }
 
-  return fallbackSchedule;
+  if (noAloneMode) {
+    const finalDayCounts: Record<string, number> = {};
+    DAYS.forEach(d => finalDayCounts[d] = 0);
+    finalSchedule.forEach(s => finalDayCounts[s.day]++);
+
+    finalSchedule = finalSchedule.filter(s => finalDayCounts[s.day] !== 1);
+  }
+
+  return finalSchedule;
 }
